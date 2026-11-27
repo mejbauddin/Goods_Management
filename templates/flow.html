@@ -6,7 +6,7 @@
 {% block head %}
 <style>
   .flow-card .flow-wrap { padding: 2px 18px 14px; }
-  .flow-card .flow-svg { min-width: 960px; }
+  .flow-card .flow-svg { min-width: 0; }
   .diagram-note { padding: 0 22px 18px; margin: 0; }
   .scope-key { display: flex; gap: 16px; flex-wrap: wrap; font-size: .74rem; color: var(--muted); padding: 2px 22px 8px; }
   .scope-key span { display: inline-flex; align-items: center; gap: 7px; }
@@ -329,7 +329,7 @@
 </section>
 
 <!-- ============ AUDIT PATH + ACTION MIX ============ -->
-<section class="grid grid-2" style="margin-top:18px">
+<section class="grid" style="margin-top:18px">
   <div class="card flow-card" data-reveal>
     <div class="card-head">
       <h2>Audit write path</h2>
@@ -366,8 +366,8 @@
           <path d="M676 302 L 685 310 L 694 302"/>
         </g>
 
-        <text class="f-label" x="846" y="112">write</text>
-        <text class="f-label" x="846" y="152">snapshot</text>
+        <text class="f-label" x="250" y="166">write</text>
+        <text class="f-label" x="560" y="166">snapshot</text>
         <text class="f-label" x="700" y="300">read</text>
 
         <g class="f-particle" style="fill:#818cf8">
@@ -445,17 +445,20 @@
       <h2>Where the events come from</h2>
       <span class="hint">all time</span>
     </div>
-    <div id="actionDonut" class="chart" style="margin-top:8px"></div>
-    <hr class="hairline">
-    <div class="stat-inline"><span class="k">Registrations</span><span class="v">{{ ops.actions.created }}</span></div>
-    <div class="stat-inline"><span class="k">Edits</span><span class="v">{{ ops.actions.updated }}</span></div>
-    <div class="stat-inline"><span class="k">Archives</span><span class="v">{{ ops.actions.archived }}</span></div>
-    <div class="stat-inline"><span class="k">Restores</span><span class="v">{{ ops.actions.restored }}</span></div>
-    <div class="stat-inline"><span class="k">Purges</span><span class="v">{{ ops.actions.deleted }}</span></div>
-    <div class="stat-inline"><span class="k">Photo replacements</span><span class="v">{{ ops.actions.photo_updated }}</span></div>
-    <p class="small muted" style="margin:12px 0 0">
-      Every mutation writes one snapshot pair, so the history page can show a before/after row for each event.
-    </p>
+    <div class="grid" style="grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); gap:28px; margin-top:8px; align-items:center">
+      <div id="actionDonut" class="chart"></div>
+      <div>
+        <div class="stat-inline"><span class="k">Registrations</span><span class="v">{{ ops.actions.created }}</span></div>
+        <div class="stat-inline"><span class="k">Edits</span><span class="v">{{ ops.actions.updated }}</span></div>
+        <div class="stat-inline"><span class="k">Archives</span><span class="v">{{ ops.actions.archived }}</span></div>
+        <div class="stat-inline"><span class="k">Restores</span><span class="v">{{ ops.actions.restored }}</span></div>
+        <div class="stat-inline"><span class="k">Purges</span><span class="v">{{ ops.actions.deleted }}</span></div>
+        <div class="stat-inline"><span class="k">Photo replacements</span><span class="v">{{ ops.actions.photo_updated }}</span></div>
+        <p class="small muted" style="margin:12px 0 0">
+          Every mutation writes one snapshot pair, so the history page can show a before/after row for each event.
+        </p>
+      </div>
+    </div>
   </div>
 </section>
 

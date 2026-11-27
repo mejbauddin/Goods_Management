@@ -104,7 +104,7 @@ GOODS_FORM_FIELDS = (
 )
 
 APP_VERSION = "2.0.0"
-ASSET_VERSION = "2026.11.27"
+ASSET_VERSION = "2026.11.28"
 
 # --------------------------------------------------------------------------
 # Settings (stored as JSON next to the database)

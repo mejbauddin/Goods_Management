@@ -25,7 +25,7 @@
       <span class="hint">instantly applied</span>
     </div>
 
-    <form method="POST" action="{{ url_for('settings_page') }}" style="margin-top:14px">
+    <form method="POST" action="{{ url_for('settings_page') }}" style="margin-top:14px" data-theme-persist>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <div class="form-grid">
@@ -37,14 +37,14 @@
 
         <div class="field">
           <label class="lbl" for="theme">Theme</label>
-          <select id="theme" name="theme">
+          <select id="theme" name="theme" data-theme-preview>
             {% for theme in themes %}
             <option value="{{ theme }}" {% if form['theme'] == theme %}selected{% endif %}>
               {{ {'auto': 'Follow system', 'light': 'Light', 'dark': 'Dark'}[theme] }}
             </option>
             {% endfor %}
           </select>
-          <p class="help">The header switch overrides this locally.</p>
+          <p class="help">Previews as you pick; saved on submit. The header switch overrides this in this browser until you save again.</p>
         </div>
 
         <div class="field">

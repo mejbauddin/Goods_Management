@@ -37,32 +37,24 @@ Most course prototypes stop at CRUD. This one treats the registry as a **system 
 
 ## Interface
 
+<img src="docs/screenshots/dashboard.jpg" alt="GoodsHub control room" width="100%">
+
+<sub><b>Control room</b> — registry health, intake pipeline, intake trend, status and category splits, activity heatmap and a live event stream, all from one SQLite snapshot.</sub>
+
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/dashboard.jpg" alt="Dashboard"><br><sub><b>Control room</b> — hero, KPI cards with sparklines, intake pipeline, trend and status charts, 14-day heatmap, live event stream.</sub></td>
-    <td width="50%"><img src="docs/screenshots/operations-flow.jpg" alt="Operations flow"><br><sub><b>Operations flow</b> — lifecycle state machine, intake pipeline and audit write path, each animated with particles along real transitions.</sub></td>
+    <td width="33%" valign="top"><img src="docs/screenshots/flow.jpg" alt="Goods lifecycle"></td>
+    <td width="33%" valign="top"><img src="docs/screenshots/registry.jpg" alt="Goods registry"></td>
+    <td width="33%" valign="top"><img src="docs/screenshots/analytics.jpg" alt="Analytics"></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/analytics.jpg" alt="Analytics"><br><sub><b>Analytics</b> — intake trend, status split, category and unit distribution, record completeness.</sub></td>
-    <td><img src="docs/screenshots/registry.jpg" alt="Goods registry"><br><sub><b>Goods registry</b> — search, filter, inline status actions, and a sticky registration/edit form.</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/categories.jpg" alt="Categories"><br><sub><b>Categories</b> — illustrated groups with usage meters, inline rename, guarded delete.</sub></td>
-    <td><img src="docs/screenshots/history.jpg" alt="Audit history"><br><sub><b>Audit history</b> — per-record timeline with before → after field diffs, retained after deletion.</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/import.jpg" alt="CSV import"><br><sub><b>CSV import</b> — drag-and-drop intake with header contract and per-row validation report.</sub></td>
-    <td><img src="docs/screenshots/settings.jpg" alt="Settings"><br><sub><b>Settings</b> — identity, theme, default filter, analytics window and database backups.</sub></td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="docs/screenshots/deleted.jpg" alt="Purge log"><br><sub><b>Purge log</b> — permanently deleted records, each still linkable to its retained audit history.</sub></td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="docs/screenshots/light-mode.jpg" alt="Light theme"><br><sub><b>Same system, light theme</b> — every surface, chart and diagram reads from the same token layer, so the whole interface flips without a second stylesheet.</sub></td>
+    <td valign="top"><sub><b>Operations flow</b><br>registered → active → archived → purged → retained, drawn live from the same records.</sub></td>
+    <td valign="top"><sub><b>Goods registry</b><br>search, filter, inline status actions and a sticky registration form.</sub></td>
+    <td valign="top"><sub><b>Analytics</b><br>intake trend, status split, category mix and record completeness.</sub></td>
   </tr>
 </table>
 
-<sub>Screenshots captured with reduced motion so the final state is frozen; at runtime charts draw in, numbers count up and diagram particles keep flowing.</sub>
+<sub>The remaining screens — audit history, CSV import, categories, purge log, settings and the light theme — are in [`docs/screenshots`](docs/screenshots). All captures use reduced motion so the final state is frozen; at runtime charts draw in, counters count up and diagram particles keep flowing.</sub>
 
 ---
 
@@ -287,6 +279,7 @@ Goods_Management/
 | [UML](docs/UML_Diagrams.md) | use case, class, sequence, activity, component |
 | [Diagram set](docs/GoodsHub_Diagrams/index.html) | all diagrams as SVG / PNG with sources |
 | [Testing report](docs/Testing_Report.md) | test matrix and results |
+| [Screens](docs/screenshots) | interface captures — every page, dark and light |
 
 ---
 

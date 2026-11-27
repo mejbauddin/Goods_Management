@@ -41,7 +41,37 @@
     document.dispatchEvent(new CustomEvent("goodshub:theme", { detail: next }));
   });
 
+  /* on the settings page the saved value is authoritative, so the form and the page never disagree */
+  const savedThemeSelect = document.querySelector("[data-theme-preview]");
+  if (savedThemeSelect) {
+    const value = savedThemeSelect.value;
+    if (value === "light" || value === "dark") {
+      root.dataset.theme = value;
+    } else {
+      delete root.dataset.theme;
+    }
+    try { localStorage.removeItem(THEME_KEY); } catch (error) { /* ignore */ }
+  }
+
   document.querySelectorAll("[data-theme-toggle]").forEach(paintThemeButton);
+
+  /* settings page: the select previews instantly, and saving re-applies the stored value */
+  document.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-theme-preview]");
+    if (!select) return;
+    const value = select.value;
+    if (value === "light" || value === "dark") {
+      root.dataset.theme = value;
+    } else {
+      delete root.dataset.theme;
+    }
+    document.querySelectorAll("[data-theme-toggle]").forEach(paintThemeButton);
+  });
+
+  document.addEventListener("submit", (event) => {
+    if (!event.target.closest("[data-theme-persist]")) return;
+    try { localStorage.removeItem(THEME_KEY); } catch (error) { /* ignore */ }
+  });
 
   /* ---------- mobile navigation ---------- */
   document.addEventListener("click", (event) => {
