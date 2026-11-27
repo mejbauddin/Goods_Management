@@ -96,6 +96,22 @@
     }
     svg.appendChild(axis);
 
+    // optional average line (matches the legend swatch)
+    if (cfg.average) {
+      const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+      const avgY = y(mean);
+      svg.appendChild(el("line", {
+        class: "avg-line",
+        x1: padL, x2: W - padR, y1: avgY, y2: avgY,
+        stroke: "#22d3ee", "stroke-width": 1.4, "stroke-dasharray": "7 6", opacity: .6,
+      }));
+      const tag = el("text", {
+        class: "avg-label", x: W - padR, y: Math.max(avgY - 7, padT + 9), "text-anchor": "end",
+      });
+      tag.textContent = "avg " + fmt(Math.round(mean * 10) / 10);
+      svg.appendChild(tag);
+    }
+
     // x labels
     const xAxis = el("g", { class: "axis" });
     const stride = n > 10 ? Math.ceil(n / 8) : 1;

@@ -483,7 +483,7 @@ code,
   width: min(320px, 30vw);
 }
 
-.top-search input {
+.top-search input[type="search"] {
   width: 100%;
   padding: 9px 12px 9px 36px;
   border-radius: 999px;
@@ -493,6 +493,11 @@ code,
   font: inherit;
   font-size: .86rem;
   transition: border-color .2s, box-shadow .2s;
+}
+
+/* Chromium draws its own clear button; hide it so the pill stays clean. */
+.top-search input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
 }
 
 .top-search input:focus {
@@ -1486,8 +1491,25 @@ td.wrap {
 }
 
 .cell-goods .c-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-size: .74rem;
   color: var(--muted);
+}
+
+.cell-goods .c-meta .code-chip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cell-goods .c-meta .c-id {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* ---------- 15. Charts ---------- */
@@ -2105,7 +2127,8 @@ td.wrap {
   gap: 0;
   border-radius: var(--r);
   border: 1px solid var(--line);
-  background: var(--card);
+  background: var(--card-solid);
+  box-shadow: 0 1px 2px rgba(13, 20, 48, .05), 0 14px 34px -28px rgba(13, 20, 48, .55);
   overflow: hidden;
   flex-wrap: wrap;
 }
@@ -3032,6 +3055,21 @@ td.wrap {
   border-radius: 3px;
 }
 
+/* legend swatch for the dashed average rule drawn by the area chart */
+.legend-inline .sw-line {
+  width: 16px;
+  height: 0;
+  border-radius: 0;
+  background: none;
+  border-top: 2px dashed #22d3ee;
+}
+
+.chart .avg-label {
+  font-size: 10px;
+  fill: var(--muted);
+  font-family: "Cascadia Mono", ui-monospace, Consolas, monospace;
+}
+
 .insight-row {
   display: flex;
   align-items: center;
@@ -3276,7 +3314,6 @@ td.wrap {
   padding: 7px 10px;
   font-size: 12.5px;
 }
-
 .changes th {
   font-size: 10.5px;
 }
@@ -3292,28 +3329,97 @@ td.wrap {
 .row-actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .row-actions .chip-btn {
-  padding: 5px 9px;
-  font-size: 11.5px;
-  line-height: 1.5;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* registry table: fixed column track so the action column can never push out of the card */
+.registry-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.registry-table th,
+.registry-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.registry-table th:nth-child(1) { width: 25%; }
+.registry-table th:nth-child(2) { width: 17%; }
+.registry-table th:nth-child(3) { width: 8%; }
+.registry-table th:nth-child(4) { width: 11%; }
+.registry-table th:nth-child(5) { width: 11%; }
+.registry-table th:nth-child(6) { width: 28%; }
+
+.registry-table .c-meta {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+.registry-table .code-chip {
+  padding: 2px 6px;
+  font-size: .71rem;
+}
+
+.registry-table .thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.registry-table td:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.registry-table td .c-name {
+  font-size: .84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registry-table .cell-goods {
+  gap: 9px;
+}
+
+.registry-table .thumb {
+  width: 34px;
+  height: 34px;
 }
 
 .row-actions form {
   display: contents;
 }
 
-.strip-step {
+/* process list on the import page (kept separate from .strip-step cards) */
+.step-list {
   list-style: none;
   padding-left: 0;
-  counter-reset: none;
+  margin: 0;
+  display: grid;
+  gap: 14px;
 }
 
-.strip-step li {
+.step-list li {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+}
+
+.step-list .num {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--accent);
+  opacity: .9;
+  padding-top: 2px;
 }
 

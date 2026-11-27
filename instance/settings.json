@@ -1,6 +1,6 @@
 {
   "app_name": "GoodsHub",
-  "theme": "auto",
+  "theme": "light",
   "default_status_filter": "all",
   "chart_months": 6
 }

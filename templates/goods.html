@@ -47,7 +47,7 @@
   </form>
 </section>
 
-<div class="two-col" style="grid-template-columns:minmax(0,1.95fr) minmax(330px,1fr)">
+<div class="two-col" style="grid-template-columns:minmax(0,2.4fr) minmax(320px,.85fr)">
 
   <!-- LIST -->
   <section class="card" data-reveal>
@@ -59,7 +59,7 @@
     {% if goods %}
     <div class="card-body" style="padding-top:12px">
       <div class="table-wrap">
-        <table>
+        <table class="registry-table">
           <thead>
             <tr>
               <th>Goods</th>
@@ -67,7 +67,7 @@
               <th>Unit</th>
               <th>Weight</th>
               <th>Status</th>
-              <th style="text-align:right; width:250px">Actions</th>
+              <th class="nw" style="text-align:right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +78,7 @@
                   {{ thumb(item) }}
                   <div>
                     <div class="c-name">{{ item.name }}</div>
-                    <div class="c-meta"><span class="code-chip">{{ item.code }}</span> · #{{ item.id }}</div>
+                    <div class="c-meta"><span class="code-chip" title="{{ item.code }}">{{ item.code }}</span><span class="c-id">· #{{ item.id }}</span></div>
                   </div>
                 </div>
               </td>
@@ -157,7 +157,7 @@
         <div class="field">
           <label class="lbl" for="goods-category">Category *</label>
           <select id="goods-category" name="category_id" required>
-            <option value="">Select a category</option>
+            <option value="">Select…</option>
             {% for category in categories %}
             <option value="{{ category['id'] }}" {% if form_data['category_id'] == category['id']|string %}selected{% endif %}>
               {{ category["name"] }}

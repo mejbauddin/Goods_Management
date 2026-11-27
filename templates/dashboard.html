@@ -179,7 +179,7 @@
     <div id="trendChart" class="chart" style="margin-top:10px"></div>
     <ul class="legend-inline">
       <li><span class="sw" style="background:#6366f1"></span>New goods records</li>
-      <li><span class="sw" style="background:#22d3ee"></span>Monthly average</li>
+      <li><span class="sw sw-line"></span>Monthly average</li>
       <li>{{ ops.window.events }} audit events in the last {{ ops.window.days }} days</li>
     </ul>
   </div>
@@ -372,6 +372,7 @@
 <script type="application/json" data-chart="area" data-target="#trendChart">
 {"labels": {{ trend | map(attribute='label') | list | tojson }},
  "values": {{ trend | map(attribute='count') | list | tojson }},
+ "average": true,
  "unit": "records", "aria": "Goods registered per month"}
 </script>
 

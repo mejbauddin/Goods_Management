@@ -57,6 +57,9 @@ Most course prototypes stop at CRUD. This one treats the registry as a **system 
   <tr>
     <td colspan="2"><img src="docs/screenshots/deleted.jpg" alt="Purge log"><br><sub><b>Purge log</b> — permanently deleted records, each still linkable to its retained audit history.</sub></td>
   </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/light-mode.jpg" alt="Light theme"><br><sub><b>Same system, light theme</b> — every surface, chart and diagram reads from the same token layer, so the whole interface flips without a second stylesheet.</sub></td>
+  </tr>
 </table>
 
 <sub>Screenshots captured with reduced motion so the final state is frozen; at runtime charts draw in, numbers count up and diagram particles keep flowing.</sub>
