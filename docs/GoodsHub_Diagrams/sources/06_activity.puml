@@ -1,0 +1,83 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #365579
+skinparam LineThickness 1.2
+skinparam classBackgroundColor #F1F5FB
+skinparam classBorderColor #365579
+skinparam componentBackgroundColor #F1F5FB
+skinparam componentBorderColor #365579
+skinparam usecaseBackgroundColor #F1F5FB
+skinparam usecaseBorderColor #365579
+skinparam activityBackgroundColor #F1F5FB
+skinparam activityBorderColor #365579
+skinparam noteBackgroundColor #FFF8E8
+skinparam noteBorderColor #C39A42
+title GoodsHub — Permanent Deletion Activity
+
+start
+:Open goods deletion page;
+:Load goods record;
+
+if (Record exists?) then (yes)
+else (no)
+    :Return HTTP 404;
+    stop
+endif
+
+if (Record is archived?) then (yes)
+else (no)
+    :Explain that archiving is required;
+    :Redirect to goods list;
+    stop
+endif
+
+:Display deletion warning\nand confirmation checkbox;
+
+if (User chooses Cancel?) then (yes)
+    :Return to goods list;
+    stop
+else (no)
+    :Submit deletion form;
+endif
+
+if (CSRF token valid?) then (yes)
+else (no)
+    :Return HTTP 400;
+    stop
+endif
+
+if (Confirmation supplied?) then (yes)
+else (no)
+    :Show confirmation-required message;
+    :Redisplay confirmation page;
+    stop
+endif
+
+:Begin database transaction;
+:Reload goods record;
+
+if (Record still exists and is archived?) then (yes)
+else (no)
+    :Roll back transaction;
+    :Report validation error;
+    stop
+endif
+
+:Capture previous goods values;
+:Delete goods record;
+:Insert Deleted audit entry\nwith previous snapshot;
+
+if (Database operations succeed?) then (yes)
+    :Commit transaction;
+    :Redirect to retained goods history;
+    :Display deleted-record notice and events;
+else (no)
+    :Roll back transaction;
+    :Propagate database error;
+endif
+
+stop
+@enduml

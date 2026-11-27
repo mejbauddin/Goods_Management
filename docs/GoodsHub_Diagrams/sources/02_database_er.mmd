@@ -1,0 +1,32 @@
+erDiagram
+    CATEGORIES ||--o{ GOODS : classifies
+
+    CATEGORIES {
+        INTEGER id PK
+        TEXT name UK
+    }
+
+    GOODS {
+        INTEGER id PK
+        TEXT code UK
+        TEXT name
+        INTEGER category_id FK
+        TEXT unit
+        REAL weight
+        TEXT description
+        TEXT status
+        TEXT created_at
+        TEXT updated_at
+        TEXT photo_filename
+    }
+
+    AUDIT_LOG {
+        INTEGER id PK
+        TEXT entity_type
+        INTEGER entity_id
+        TEXT entity_label
+        TEXT action
+        TEXT before_json
+        TEXT after_json
+        TEXT created_at
+    }

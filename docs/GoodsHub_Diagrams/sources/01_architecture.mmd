@@ -1,0 +1,22 @@
+flowchart TD
+    Browser["Web browser"]
+    Routes["Flask routes — app.py"]
+    Templates["Jinja templates"]
+    CSV["CSV import service"]
+    Photos["Photo storage service"]
+    Repos["Repository modules"]
+    DBAccess["database.py"]
+    SQLite[("SQLite database")]
+    Files[("Photo files")]
+
+    Browser -->|"HTTP requests"| Routes
+    Routes -->|"Render pages"| Templates
+    Templates -->|"HTML responses"| Browser
+    Routes --> CSV
+    Routes --> Photos
+    Routes --> Repos
+    CSV --> Repos
+    Repos --> DBAccess
+    DBAccess --> SQLite
+    Photos --> Files
+    Routes -->|"Serve saved photos"| Files

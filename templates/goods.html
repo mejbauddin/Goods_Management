@@ -1,0 +1,267 @@
+{% extends "_layout.html" %}
+{% block title %}Goods{% endblock %}
+{% block heading %}Goods catalog{% endblock %}
+
+{% block head %}
+<style>
+    .heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .count {
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .card {
+        margin-bottom: 20px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .field label {
+        margin-bottom: 6px;
+    }
+
+    .full-width {
+        grid-column: 1/-1;
+    }
+
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin-top: 18px;
+    }
+
+    .form-actions .btn {
+        margin-top: 0;
+    }
+
+    .search-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .search-row input[type=search] {
+        flex: 1 1 240px;
+    }
+
+    .search-row .btn {
+        margin-top: 0;
+    }
+
+    .search-row a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .edit-link,
+    .status-button {
+        display: inline-block;
+        padding: .35rem .7rem;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .edit-link:hover,
+    .status-button:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+    }
+
+    .archive-button {
+        color: var(--warn);
+    }
+
+    .restore-button {
+        color: var(--good);
+    }
+
+    @media (max-width:650px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="heading">
+    <p class="sub" style="margin:0">View your registered goods and their categories.</p>
+    <span class="count">
+        {% if search or status_filter != "all" %}
+        {{ goods | length }} matching record{% if goods | length != 1 %}s{% endif %}
+        {% else %}
+        {{ goods | length }} goods record{% if goods | length != 1 %}s{% endif %}
+        {% endif %}
+    </span>
+</div>
+
+<section class="card">
+    <h2>{% if editing_id %}Edit goods · Record #{{ editing_id }}{% else %}Register goods{% endif %}</h2>
+    <p class="help">Fields marked * are required.</p>
+
+    {% if categories %}
+    <form method="POST"
+        action="{{ url_for('edit_goods_page', goods_id=editing_id) if editing_id else url_for('goods_page') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-grid">
+            <div class="field"><label for="goods-code">Goods code *</label>
+                <input id="goods-code" name="code" type="text" value="{{ form_data['code'] }}" placeholder="e.g. EL-002"
+                    minlength="2" maxlength="30" required>
+            </div>
+            <div class="field"><label for="goods-name">Goods name *</label>
+                <input id="goods-name" name="name" type="text" value="{{ form_data['name'] }}"
+                    placeholder="e.g. Wireless mouse" maxlength="120" required>
+            </div>
+            <div class="field"><label for="goods-category">Category *</label>
+                <select id="goods-category" name="category_id" required>
+                    <option value="">Select a category</option>
+                    {% for category in categories %}
+                    <option value="{{ category['id'] }}" {% if form_data['category_id']==category['id']|string
+                        %}selected{% endif %}>
+                        {{ category["name"] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field"><label for="goods-unit">Unit *</label>
+                <select id="goods-unit" name="unit" required>
+                    {% for unit in units %}
+                    <option value="{{ unit }}" {% if form_data['unit']==unit %}selected{% endif %}>{{ unit }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field"><label for="goods-weight">Weight per unit (kg) *</label>
+                <input id="goods-weight" name="weight" type="number" value="{{ form_data['weight'] }}"
+                    placeholder="e.g. 0.12" min="0" max="1000000" step="any" required>
+            </div>
+            <div class="field full-width"><label for="goods-description">Description</label>
+                <textarea id="goods-description" name="description" rows="3" maxlength="2000"
+                    placeholder="Optional details about this item">{{ form_data["description"] }}</textarea>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn" type="submit">{{ "Save changes" if editing_id else "+ Register goods" }}</button>
+            <a href="{{ url_for('goods_page') }}">{{ "Cancel editing" if editing_id else "Clear form" }}</a>
+        </div>
+    </form>
+    {% else %}
+    <p>Create a category before registering goods. <a href="{{ url_for('categories_page') }}">Go to Categories</a></p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <form method="GET" action="{{ url_for('goods_page') }}">
+        <div class="search-row">
+            <input name="q" type="search" value="{{ search }}" placeholder="Search by goods code or name">
+            <select name="status" style="max-width:180px">
+                <option value="all" {% if status_filter=="all" %}selected{% endif %}>All statuses</option>
+                <option value="active" {% if status_filter=="active" %}selected{% endif %}>Active only</option>
+                <option value="archived" {% if status_filter=="archived" %}selected{% endif %}>Archived only</option>
+            </select>
+            <button class="btn" type="submit">Apply filters</button>
+            <a href="{{ url_for('goods_page') }}">Show all</a>
+            <a href="{{ url_for('export_goods', q=search, status=status_filter) }}">Export CSV</a>
+            <a href="{{ url_for('import_goods_page') }}">Import CSV</a>
+            <a href="{{ url_for('deleted_goods_page') }}">Deleted goods</a>
+        </div>
+    </form>
+    {% if search %}<p class="help">{{ goods | length }} result(s) for “{{ search }}”.</p>{% endif %}
+</section>
+
+<section class="card">
+    {% if goods %}
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Goods code</th>
+                    <th>Goods name</th>
+                    <th>Category</th>
+                    <th>Unit</th>
+                    <th>Weight (kg/unit)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in goods %}
+                <tr>
+                    <td>{{ item["id"] }}</td>
+                    <td><strong>{{ item["code"] }}</strong></td>
+                    <td>
+                        {{ item["name"] }}
+                        {% if item.photo_filename %}
+                        <img src="{{ url_for('goods_photo_file', filename=item.photo_filename) }}"
+                            alt="Photo of {{ item.name }}" loading="lazy"
+                            style="display:block; width:56px; height:56px; object-fit:cover; border-radius:8px; margin-top:6px;">
+                        {% endif %}
+                    </td>
+                    <td>{{ item["category_name"] }}</td>
+                    <td>{{ item["unit"] }}</td>
+                    <td>{{ item["weight"] }}</td>
+                    <td><span class="badge {{ item['status'] }}">{{ item["status"] | capitalize }}</span></td>
+                    <td>
+                        <div class="row-actions">
+                            {% if item["status"] == "archived" %}
+                            <a class="edit-link"
+                                href="{{ url_for('delete_goods_page', goods_id=item['id']) }}">Delete</a>
+                            {% endif %}
+                            <a class="edit-link"
+                                href="{{ url_for('goods_history_page', goods_id=item['id']) }}">History</a>
+                            <a class="edit-link" href="{{ url_for('edit_goods_page', goods_id=item['id']) }}">Edit</a>
+                            <a class="edit-link" href="{{ url_for('goods_photo_page', goods_id=item['id']) }}">Photo</a>
+                            <form method="POST" action="{{ url_for('change_goods_status', goods_id=item['id']) }}"
+                                style="margin:0">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="q" value="{{ search }}">
+                                <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                                {% if item["status"] == "active" %}
+                                <input type="hidden" name="status" value="archived">
+                                <button class="status-button archive-button" type="submit">Archive</button>
+                                {% else %}
+                                <input type="hidden" name="status" value="active">
+                                <button class="status-button restore-button" type="submit">Restore</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty">
+        {% if search or status_filter != "all" %}No goods match your filters.
+        {% else %}No goods registered yet.{% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

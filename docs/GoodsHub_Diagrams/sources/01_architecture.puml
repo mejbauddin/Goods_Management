@@ -1,0 +1,30 @@
+@startuml
+title GoodsHub — Application Architecture
+top to bottom direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam rectangleBackgroundColor #F1F5FB
+skinparam ArrowColor #365579
+rectangle "Web browser" as Browser
+rectangle "Flask routes\napp.py" as Routes
+rectangle "Jinja templates" as Templates
+rectangle "CSV import service" as CSV
+rectangle "Photo storage service" as Photos
+rectangle "Repository modules" as Repos
+rectangle "database.py" as DBAccess
+database "SQLite database" as SQLite
+folder "Photo files" as Files
+Browser --> Routes : HTTP requests
+Routes --> Templates : Render pages
+Templates --> Browser : HTML responses
+Routes --> CSV
+Routes --> Photos
+Routes --> Repos
+CSV --> Repos
+Repos --> DBAccess
+DBAccess --> SQLite
+Photos --> Files
+Routes --> Files : Serve saved photos
+@enduml

@@ -1,0 +1,55 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #365579
+skinparam LineThickness 1.2
+skinparam classBackgroundColor #F1F5FB
+skinparam classBorderColor #365579
+skinparam componentBackgroundColor #F1F5FB
+skinparam componentBorderColor #365579
+skinparam usecaseBackgroundColor #F1F5FB
+skinparam usecaseBorderColor #365579
+skinparam activityBackgroundColor #F1F5FB
+skinparam activityBorderColor #365579
+skinparam noteBackgroundColor #FFF8E8
+skinparam noteBorderColor #C39A42
+title GoodsHub — Use Case Diagram
+left to right direction
+
+actor "GoodsHub User\n(Operator or Manager)" as User
+
+rectangle "Goods Management Module" {
+    usecase "Register goods" as Register
+    usecase "Edit goods" as Edit
+    usecase "Search and filter goods" as Search
+    usecase "Manage categories" as Categories
+    usecase "Archive goods" as Archive
+    usecase "Restore goods" as Restore
+    usecase "Permanently delete\narchived goods" as Delete
+    usecase "View goods history\nincluding deleted goods" as History
+    usecase "Upload or replace photo" as Photo
+    usecase "Import goods from CSV" as Import
+    usecase "Export filtered goods" as Export
+    usecase "View dashboard" as Dashboard
+}
+
+User -- Register
+User -- Edit
+User -- Search
+User -- Categories
+User -- Archive
+User -- Restore
+User -- Delete
+User -- History
+User -- Photo
+User -- Import
+User -- Export
+User -- Dashboard
+
+note bottom of Delete
+Precondition: the goods record is archived.
+The user must confirm permanent deletion.
+end note
+@enduml

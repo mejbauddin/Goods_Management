@@ -1,0 +1,56 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #365579
+skinparam LineThickness 1.2
+skinparam classBackgroundColor #F1F5FB
+skinparam classBorderColor #365579
+skinparam componentBackgroundColor #F1F5FB
+skinparam componentBorderColor #365579
+skinparam usecaseBackgroundColor #F1F5FB
+skinparam usecaseBorderColor #365579
+skinparam activityBackgroundColor #F1F5FB
+skinparam activityBorderColor #365579
+skinparam noteBackgroundColor #FFF8E8
+skinparam noteBorderColor #C39A42
+title GoodsHub — Component Diagram
+top to bottom direction
+skinparam componentStyle uml2
+
+component "Web Browser" as Browser
+
+package "GoodsHub Flask Application" {
+    component "Routes and CSV Export\napp.py" as App
+    component "HTML Presentation\ntemplates/" as Templates
+    component "CSV Import\ncsv_import_service.py" as CSV
+    component "Image Processing\nphoto_storage.py" as Photos
+
+    component "Repository Modules" as Repos
+    component "Database Connections and Schema\ndatabase.py" as DatabaseAccess
+}
+
+database "SQLite\ninstance/goodshub.sqlite3" as SQLite
+folder "Photo Storage\ninstance/goods_photos/" as Files
+
+Browser --> App : HTTP requests
+App --> Templates : render
+App --> CSV : import file
+App --> Photos : validate and save image
+App --> Repos : read or change data
+CSV --> Repos : look up categories and add goods
+Repos --> DatabaseAccess : open connections
+App --> DatabaseAccess : initialize schema at startup
+DatabaseAccess --> SQLite : SQL connections
+Photos --> Files : write JPEG files
+App --> Files : serve requested photo
+
+note bottom of Repos
+goods_repository.py
+category_repository.py
+audit_repository.py
+dashboard_repository.py
+photo_repository.py
+end note
+@enduml

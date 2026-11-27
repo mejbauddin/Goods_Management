@@ -1,0 +1,165 @@
+{% extends "_layout.html" %}
+{% block title %}Categories{% endblock %}
+{% block heading %}Categories{% endblock %}
+
+{% block head %}
+<style>
+    .heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .count {
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .card {
+        margin-bottom: 20px;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .form-row input {
+        flex: 1 1 220px;
+    }
+
+    .form-row .btn {
+        margin-top: 0;
+    }
+
+    .rename-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .rename-form input {
+        flex: 1 1 160px;
+    }
+
+    .rename-form button,
+    .delete-button {
+        padding: .4rem .8rem;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .rename-form button:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+    }
+
+    .delete-button {
+        border-color: #fecaca;
+        color: #b91c1c;
+        background: #fef2f2;
+    }
+
+    .delete-button:hover {
+        background: #fee2e2;
+    }
+
+    :root[data-theme="dark"] .delete-button {
+        background: #3f1a1a;
+        color: #fca5a5;
+        border-color: #7f1d1d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="heading">
+    <p class="sub" style="margin:0">Organize your goods into clear groups.</p>
+    <span class="count">{{ categories | length }} categories</span>
+</div>
+
+<section class="card">
+    <h2>Add a category</h2>
+    <form method="POST" action="{{ url_for('categories_page') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="category-name">Category name</label>
+        <div class="form-row">
+            <input id="category-name" type="text" name="name" value="{{ category_name }}" placeholder="e.g. Household"
+                maxlength="60" required>
+            <button class="btn" type="submit">+ Add category</button>
+        </div>
+        <p class="help">Use a unique name with a maximum of 60 characters.</p>
+    </form>
+</section>
+
+<section class="card">
+    {% if categories %}
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Rename</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category["id"] }}</td>
+                    <td><strong>{{ category["name"] }}</strong></td>
+                    <td>
+                        <form class="rename-form" method="POST"
+                            action="{{ url_for('rename_category_page', category_id=category['id']) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <label class="visually-hidden" for="rename-{{ category['id'] }}">New name</label>
+                            <input id="rename-{{ category['id'] }}" type="text" name="name"
+                                value="{{ category['name'] }}" maxlength="60" required>
+                            <button type="submit">Rename</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form class="delete-category-form" method="POST"
+                            action="{{ url_for('delete_category_page', category_id=category['id']) }}"
+                            data-category-name="{{ category['name'] }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="delete-button">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty">No categories yet.</div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll(".delete-category-form").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+            if (!window.confirm('Permanently delete category "' + form.dataset.categoryName + '"?\n\nCategories used by goods cannot be deleted.')) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

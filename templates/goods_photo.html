@@ -1,0 +1,48 @@
+{% extends "_layout.html" %}
+{% block title %}Goods photo{% endblock %}
+{% block heading %}Goods photo{% endblock %}
+
+{% block head %}
+<style>
+    .photo {
+        display: block;
+        width: 100%;
+        max-height: 360px;
+        object-fit: contain;
+        margin: 20px 0;
+        border-radius: 12px;
+        background: var(--bg);
+    }
+
+    .empty-photo {
+        padding: 40px 20px;
+        text-align: center;
+        background: var(--bg);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="sub"><strong>{{ item.code }} · {{ item.name }}</strong></p>
+
+<section class="card">
+    {% if item.photo_filename %}
+    <img class="photo" src="{{ url_for('goods_photo_file', filename=item.photo_filename) }}"
+        alt="Photo of {{ item.name }}">
+    {% else %}
+    <div class="empty-photo muted">No photo uploaded yet.</div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('goods_photo_page', goods_id=item.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="photo">Choose a photo</label>
+        <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required>
+        <p class="help">JPG, PNG, or WebP. Max 5 MB. Uploading replaces the current photo.</p>
+        <button class="btn" type="submit">Save photo</button>
+        <a href="{{ url_for('goods_history_page', goods_id=item.id) }}" style="margin-left:1rem">View change history</a>
+    </form>
+</section>
+{% endblock %}

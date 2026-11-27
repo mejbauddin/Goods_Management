@@ -1,0 +1,27 @@
+{% extends "_layout.html" %}
+{% block title %}Confirm deletion{% endblock %}
+{% block heading %}Delete goods permanently?{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:650px">
+    <p><strong>{{ item["code"] }} · {{ item["name"] }}</strong><br>
+        Record ID: {{ item["id"] }} · Status: Archived</p>
+
+    <div class="flash error" role="alert">
+        This removes the goods record from the catalog. You cannot restore it afterward.
+        Its change history will remain available.
+    </div>
+
+    <form method="POST" action="{{ url_for('delete_goods_page', goods_id=item['id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label style="display:flex; align-items:flex-start; gap:10px; font-weight:500">
+            <input type="checkbox" name="confirmation" value="delete" required style="margin-top:6px">
+            <span>I understand that this goods record will be permanently deleted.</span>
+        </label>
+        <div style="display:flex; gap:16px; align-items:center; margin-top:16px">
+            <button class="btn danger" type="submit">Permanently delete</button>
+            <a href="{{ url_for('goods_page') }}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

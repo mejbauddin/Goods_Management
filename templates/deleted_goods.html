@@ -1,0 +1,48 @@
+{% extends "_layout.html" %}
+{% block title %}Deleted goods{% endblock %}
+{% block heading %}Deleted goods history{% endblock %}
+
+{% block content %}
+<p class="sub">
+    {{ deleted_goods | length }} deleted record{% if deleted_goods | length != 1 %}s{% endif %} · Most recently deleted
+    first.
+</p>
+<div class="card" style="background:#fffbeb; border-color:#fde68a; color:#92400e; margin-bottom:16px">
+    These goods were permanently deleted and cannot be restored. Their saved history remains available for review.
+</div>
+
+<section class="card">
+    {% if deleted_goods %}
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Goods code</th>
+                    <th>Goods name</th>
+                    <th>Deleted at (UTC)</th>
+                    <th>History</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in deleted_goods %}
+                <tr>
+                    <td>{{ item["id"] }}</td>
+                    <td>{{ item["code"] }}</td>
+                    <td>{{ item["name"] }}</td>
+                    <td>{{ item["deleted_at"] }}</td>
+                    <td>
+                        <a class="edit-link"
+                            style="display:inline-block;padding:.35rem .7rem;border:1px solid var(--border);border-radius:7px;color:var(--accent);text-decoration:none;font-weight:600"
+                            href="{{ url_for('goods_history_page', goods_id=item['id']) }}">View history</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty">No permanently deleted goods records.</div>
+    {% endif %}
+</section>
+{% endblock %}

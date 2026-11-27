@@ -1,0 +1,69 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #365579
+skinparam LineThickness 1.2
+skinparam classBackgroundColor #F1F5FB
+skinparam classBorderColor #365579
+skinparam componentBackgroundColor #F1F5FB
+skinparam componentBorderColor #365579
+skinparam usecaseBackgroundColor #F1F5FB
+skinparam usecaseBorderColor #365579
+skinparam activityBackgroundColor #F1F5FB
+skinparam activityBorderColor #365579
+skinparam noteBackgroundColor #FFF8E8
+skinparam noteBorderColor #C39A42
+title GoodsHub — Conceptual Class Diagram
+hide methods
+skinparam classAttributeIconSize 0
+
+class Category <<domain concept>> {
+    id : Integer
+    name : String
+}
+
+class Goods <<domain concept>> {
+    id : Integer
+    code : String
+    name : String
+    category_id : Integer
+    unit : String
+    weight : Real
+    description : String
+    status : String
+    created_at : Timestamp
+    updated_at : Timestamp
+    photo_filename : String
+}
+
+class AuditEntry <<historical record>> {
+    id : Integer
+    entity_type : String
+    entity_id : Integer
+    entity_label : String
+    action : String
+    before_json : String [0..1]
+    after_json : String [0..1]
+    created_at : Timestamp
+}
+
+Category "1" -- "0..*" Goods : classifies
+
+AuditEntry ..> Goods : may describe changes to
+AuditEntry ..> Category : may describe changes to
+
+note bottom of Goods
+code is unique.
+status is active or archived.
+photo_filename may be empty.
+end note
+
+note bottom of AuditEntry
+The dashed dependencies indicate historical references.
+entity_type and entity_id identify the subject.
+There is no database foreign key to the subject.
+History survives deletion of the live record.
+end note
+@enduml

@@ -1,0 +1,4 @@
+code,name,category,unit,weight,description
+BAD-001,Invalid weight,Electronics,Piece,-1,Validation test
+BAD-002,Unknown category,Missing Category,Piece,0.1,Validation test
+BAD-003,Invalid unit,Electronics,InvalidUnit,0.1,Validation test

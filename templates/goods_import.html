@@ -1,0 +1,105 @@
+{% extends "_layout.html" %}
+{% block title %}Import goods{% endblock %}
+{% block heading %}Import goods from CSV{% endblock %}
+
+{% block head %}
+<style>
+    pre {
+        overflow-x: auto;
+        padding: 16px;
+        background: var(--bg);
+        border-radius: 8px;
+    }
+
+    .card {
+        margin-top: 18px;
+    }
+
+    .success {
+        color: var(--good);
+    }
+
+    .failed {
+        color: var(--bad);
+    }
+
+    .message {
+        padding: 14px;
+        margin: 14px 0;
+        border-radius: 8px;
+    }
+
+    .message.error {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .message.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="sub">Create new goods from a CSV file. Valid rows are saved, invalid rows are reported below. Existing goods
+    are not overwritten.</p>
+
+<section class="card">
+    <ul>
+        <li>Use the exact column headings and order shown below.</li>
+        <li>Category names must already exist in {{ settings.app_name }}.</li>
+        <li>Units: Piece, Box, Pack, Bag, Bottle, Set, or Roll.</li>
+        <li>New goods are created with Active status.</li>
+        <li>Maximum: 500 goods and a 2 MB UTF-8 CSV file.</li>
+    </ul>
+
+    <p><strong>Example file:</strong></p>
+    <pre>code,name,category,unit,weight,description
+IMP-001,USB cable,Electronics,Piece,0.05,One metre cable
+IMP-002,Notebook,Office Supplies,Piece,0.20,A5 notebook</pre>
+
+    <p class="help">Add photos separately after importing.</p>
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('import_goods_page') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="csv_file">Select CSV file</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
+        <button class="btn" type="submit">Import goods</button>
+    </form>
+</section>
+
+{% if result is not none %}
+<section class="card">
+    <h2>Import results</h2>
+    <p role="status">
+        <strong class="success">{{ result.imported }} imported</strong> ·
+        <strong class="failed">{{ result.failed }} failed</strong>
+    </p>
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>CSV line</th>
+                    <th>Goods code</th>
+                    <th>Result</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in result.rows %}
+                <tr>
+                    <td>{{ row.line }}</td>
+                    <td>{{ row.code }}</td>
+                    <td class="{{ 'success' if row.success else 'failed' }}">{{ 'Imported' if row.success else 'Failed'
+                        }}</td>
+                    <td>{{ row.message }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p><a href="{{ url_for('goods_page') }}">View goods →</a></p>
+</section>
+{% endif %}
+{% endblock %}

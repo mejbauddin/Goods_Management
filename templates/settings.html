@@ -1,0 +1,50 @@
+{% extends "_layout.html" %}
+{% block title %}Settings{% endblock %}
+{% block heading %}Settings{% endblock %}
+
+{% block content %}
+<p class="sub">Personalise how the application looks and behaves.</p>
+
+<form method="post" class="card" style="max-width:560px" autocomplete="off">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <label for="app_name">Application name</label>
+  <input type="text" id="app_name" name="app_name" maxlength="40" required
+    value="{{ form.app_name if form is defined else settings.app_name }}">
+  <div class="help">Shown in the sidebar and page titles (max 40 chars).</div>
+
+  <label for="theme">Theme</label>
+  <select id="theme" name="theme">
+    {% for t in themes %}
+    <option value="{{ t }}" {% if (form.theme if form is defined else settings.theme)==t %}selected{% endif %}>
+      {{ {'auto':'Automatic (follow device)','light':'Light','dark':'Dark'}[t] }}
+    </option>
+    {% endfor %}
+  </select>
+
+  <label for="default_status_filter">Default goods list filter</label>
+  <select id="default_status_filter" name="default_status_filter">
+    {% set cur = form.default_status_filter if form is defined else settings.default_status_filter %}
+    {% for s in status_filters %}
+    <option value="{{ s }}" {% if cur==s %}selected{% endif %}>{{ s|capitalize }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="chart_months">Monthly chart range</label>
+  <select id="chart_months" name="chart_months">
+    {% set cur = (form.chart_months|int if form is defined else settings.chart_months) %}
+    {% for m in month_choices %}
+    <option value="{{ m }}" {% if cur==m %}selected{% endif %}>Last {{ m }} months</option>
+    {% endfor %}
+  </select>
+
+  <button class="btn" type="submit">Save settings</button>
+</form>
+
+<form method="post" action="{{ url_for('backup_page') }}" class="card" style="max-width:560px; margin-top:1rem">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2>Database backup</h2>
+  <p class="help">Saves a copy in <code>instance/backups</code>. The 10 newest are kept.</p>
+  <button class="btn" type="submit">Back up now</button>
+</form>
+{% endblock %}

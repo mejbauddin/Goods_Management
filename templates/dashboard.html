@@ -1,0 +1,375 @@
+{% extends "_layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+    }
+
+    .stat-card {
+        display: block;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        color: inherit;
+        text-decoration: none;
+        box-shadow: var(--shadow);
+    }
+
+    .stat-card:hover {
+        border-color: var(--accent);
+    }
+
+    .stat-label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    .stat-number {
+        display: block;
+        margin-top: 10px;
+        font-size: 34px;
+        font-weight: 700;
+    }
+
+    .blue {
+        color: #2563eb
+    }
+
+    .green {
+        color: #15803d
+    }
+
+    .gray {
+        color: #475569
+    }
+
+    .purple {
+        color: #7c3aed
+    }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 0 0 24px;
+    }
+
+    .actions .btn {
+        margin-top: 0;
+    }
+
+    .btn.outline {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+
+    .insights {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .columns {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        height: 170px;
+    }
+
+    .column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+    }
+
+    .column-value {
+        margin-bottom: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .column-bar {
+        width: 100%;
+        max-width: 44px;
+        min-height: 3px;
+        border-radius: 8px 8px 0 0;
+        background: linear-gradient(180deg, var(--c1), var(--c2));
+    }
+
+    .column-label {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    .bars {
+        display: grid;
+        gap: 14px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .bar-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    .bar-row span:last-child {
+        color: var(--muted);
+    }
+
+    .bar-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: var(--border);
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--accent);
+    }
+
+    .dashboard-goods {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dashboard-photo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 52px;
+        height: 52px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg);
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .dashboard-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .dashboard-photo span {
+        font-size: 11px;
+        padding: 4px;
+        text-align: center;
+    }
+
+    .stat-hint {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .activity ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .activity li {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+    }
+
+    .activity li:last-child {
+        border-bottom: none;
+    }
+
+    .activity time {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .note {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    @media (max-width:900px) {
+        .stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .insights {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width:500px) {
+        .stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="sub">An overview of your goods catalog.</p>
+
+<section class="stats" aria-label="Catalog summary">
+    <a class="stat-card" href="{{ url_for('goods_page') }}">
+        <p class="stat-label">Total goods records</p>
+        <span class="stat-number blue">{{ dashboard["total_goods"] }}</span>
+    </a>
+    <a class="stat-card" href="{{ url_for('goods_page', status='active') }}">
+        <p class="stat-label">Active goods</p>
+        <span class="stat-number green">{{ dashboard["active_goods"] }}</span>
+        <span class="stat-hint">{{ dashboard["active_percent"] }}% of all goods</span>
+    </a>
+    <a class="stat-card" href="{{ url_for('goods_page', status='archived') }}">
+        <p class="stat-label">Archived goods</p>
+        <span class="stat-number gray">{{ dashboard["archived_goods"] }}</span>
+        <span class="stat-hint">{{ dashboard["archived_percent"] }}% of all goods</span>
+    </a>
+    <a class="stat-card" href="{{ url_for('categories_page') }}">
+        <p class="stat-label">Categories</p>
+        <span class="stat-number purple">{{ dashboard["total_categories"] }}</span>
+    </a>
+</section>
+
+<div class="actions">
+    <a class="btn" href="{{ url_for('goods_page') }}">Manage goods</a>
+    <a class="btn outline" href="{{ url_for('categories_page') }}">Manage categories</a>
+    <a class="btn outline" href="{{ url_for('export_goods') }}">Export all goods</a>
+</div>
+
+<section class="insights">
+    <div class="card">
+        <h2>Goods added per month</h2>
+        {% set peak = [dashboard["monthly"] | map(attribute="count") | max, 1] | max %}
+        <div class="columns" role="img" aria-label="Goods added per month">
+            {% for m in dashboard["monthly"] %}
+            <div class="column" title="{{ m.month }}: {{ m.count }}">
+                <span class="column-value">{{ m.count }}</span>
+                <div class="column-bar" style="height: {{ (m.count * 100 / peak) | round(1) }}%"></div>
+                <span class="column-label">{{ m.month[2:] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Top categories</h2>
+        {% if dashboard["top_categories"] %}
+        {% set top = dashboard["top_categories"][0].goods_count %}
+        <ul class="bars">
+            {% for row in dashboard["top_categories"] %}
+            <li>
+                <div class="bar-row"><span>{{ row.name }}</span><span>{{ row.goods_count }}</span></div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ (row.goods_count * 100 / top) | round(1) }}%"></div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">No goods in any category yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="card">
+    <div
+        style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px">
+        <h2 style="margin:0">Recently registered goods</h2>
+        <a href="{{ url_for('goods_page') }}">View all goods →</a>
+    </div>
+
+    {% if dashboard["recent_goods"] %}
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>Goods code</th>
+                    <th>Goods name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Created (UTC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dashboard["recent_goods"] %}
+                <tr>
+                    <td><a href="{{ url_for('goods_history_page', goods_id=item['id']) }}">{{ item["code"] }}</a></td>
+                    <td>
+                        <div class="dashboard-goods">
+                            <a class="dashboard-photo" href="{{ url_for('goods_photo_page', goods_id=item.id) }}"
+                                aria-label="Manage photo for {{ item.name }}">
+                                {% if item.photo_filename %}
+                                <img src="{{ url_for('goods_thumb_file', filename=item.photo_filename) }}"
+                                    onerror="this.onerror=null;this.src='{{ url_for('goods_photo_file', filename=item.photo_filename) }}'"
+                                    alt="Photo of {{ item.name }}" loading="lazy">
+                                {% else %}<span>Add photo</span>{% endif %}
+                            </a>
+                            <span>{{ item.name }}</span>
+                        </div>
+                    </td>
+                    <td>{{ item["category_name"] }}</td>
+                    <td><span class="badge {{ item['status'] }}">{{ item["status"] | capitalize }}</span></td>
+                    <td>{{ item["created_at"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty">No goods registered yet. Click Manage goods to begin.</p>
+    {% endif %}
+</section>
+
+<section class="card activity" style="margin-top:1rem">
+    <h2>Recent activity</h2>
+    {% if dashboard["recent_activity"] %}
+    <ul>
+        {% for event in dashboard["recent_activity"] %}
+        <li>
+            <a href="{{ url_for('goods_history_page', goods_id=event.entity_id) }}">{{ event.entity_label }}</a>
+            <span>{{ event.action | replace("_", " ") | capitalize }}</span>
+            <time>{{ event.created_at }} UTC</time>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No activity yet.</p>
+    {% endif %}
+</section>
+
+<p class="note">
+    {% if dashboard["without_photo"] %}{{ dashboard["without_photo"] }} goods record(s) have no photo yet.{% endif %}
+    Counts represent registered goods types, not warehouse stock quantities.
+</p>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "_layout.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block head %}
+<style>
+  .donut-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .donut { width: 170px; height: 170px; flex: none; }
+  .donut .track { fill: none; stroke: var(--border); stroke-width: 4; }
+  .donut .seg { fill: none; stroke-width: 4; }
+  .donut text { fill: var(--text); text-anchor: middle; }
+  .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 150px; }
+  .legend li { display: flex; align-items: center; gap: .5rem; padding: .3rem 0; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .legend .num { margin-left: auto; font-weight: 600; }
+
+  .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+  .bars .row { display: flex; justify-content: space-between; font-size: .9rem; margin-bottom: .25rem; }
+  .bars .row span:last-child { color: var(--muted); }
+  .bars .track { height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .bars .fill { height: 100%; border-radius: 99px; }
+
+  .columns { display: flex; align-items: flex-end; gap: .6rem; height: 190px; padding-top: 1rem; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .col .val { font-size: .8rem; font-weight: 600; margin-bottom: .25rem; }
+  .col .bar {
+    width: 100%; max-width: 48px; min-height: 3px; border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, var(--c1), var(--c2));
+  }
+  .col .name { font-size: .78rem; color: var(--muted); margin-top: .4rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Analytics</h1>
+<p class="sub">An overview of your goods registry. The monthly chart covers the last {{ settings.chart_months }} months (change it in <a href="{{ url_for('settings_page') }}">Settings</a>).</p>
+
+{% if stats.total == 0 %}
+  <div class="card empty">No goods registered yet. <a href="{{ url_for('goods_page') }}">Add your first goods</a> to see charts here.</div>
+{% else %}
+
+<section class="grid kpis">
+  <div class="card kpi"><div class="label">Total goods</div><div class="value">{{ stats.total }}</div></div>
+  <div class="card kpi"><div class="label">Active</div><div class="value" style="color:var(--good)">{{ stats.active }}</div><div class="hint">{{ stats.active_percent }}% of all goods</div></div>
+  <div class="card kpi"><div class="label">Archived</div><div class="value" style="color:var(--warn)">{{ stats.archived }}</div><div class="hint">{{ stats.archived_percent }}% of all goods</div></div>
+  <div class="card kpi"><div class="label">Categories in use</div><div class="value">{{ stats.category_count }}</div><div class="hint">Avg. weight {{ stats.avg_weight }} kg</div></div>
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>Status split</h2>
+    <div class="donut-wrap">
+      <svg class="donut" viewBox="0 0 42 42" role="img" aria-label="Active {{ stats.active }}, archived {{ stats.archived }}">
+        <circle class="track" cx="21" cy="21" r="15.9155"/>
+        {% if stats.active %}
+        <circle class="seg" cx="21" cy="21" r="15.9155" stroke="var(--good)"
+                stroke-dasharray="{{ stats.active_percent }} {{ 100 - stats.active_percent }}" stroke-dashoffset="25"/>
+        {% endif %}
+        {% if stats.archived %}
+        <circle class="seg" cx="21" cy="21" r="15.9155" stroke="var(--warn)"
+                stroke-dasharray="{{ stats.archived_percent }} {{ 100 - stats.archived_percent }}"
+                stroke-dashoffset="{{ 25 - stats.active_percent }}"/>
+        {% endif %}
+        <text x="21" y="22" font-size="7" font-weight="700">{{ stats.total }}</text>
+        <text x="21" y="27" font-size="2.6" style="fill:var(--muted)">goods</text>
+      </svg>
+      <ul class="legend">
+        <li><span class="dot" style="background:var(--good)"></span>Active<span class="num">{{ stats.active }}</span></li>
+        <li><span class="dot" style="background:var(--warn)"></span>Archived<span class="num">{{ stats.archived }}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Goods added per month <span class="help">({{ stats.monthly_total }} in this period)</span></h2>
+    <div class="columns">
+      {% for m in stats.monthly %}
+      <div class="col" title="{{ m.full_label }}: {{ m.count }}">
+        <span class="val">{{ m.count }}</span>
+        <div class="bar" style="height: {{ m.height }}%"></div>
+        <span class="name">{{ m.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="card">
+    <h2>Top categories</h2>
+    <ul class="bars">
+      {% for row in stats.categories %}
+      <li>
+        <div class="row"><span>{{ row.label }}</span><span>{{ row.count }} · {{ row.percent }}%</span></div>
+        <div class="track"><div class="fill" style="width: {{ row.bar }}%; background: var(--c{{ loop.index }})"></div></div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Units of measure</h2>
+    <ul class="bars">
+      {% for row in stats.units %}
+      <li>
+        <div class="row"><span>{{ row.label }}</span><span>{{ row.count }} · {{ row.percent }}%</span></div>
+        <div class="track"><div class="fill" style="width: {{ row.bar }}%; background: var(--c{{ (loop.index - 1) % 8 + 1 }})"></div></div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% endif %}
+{% endblock %}

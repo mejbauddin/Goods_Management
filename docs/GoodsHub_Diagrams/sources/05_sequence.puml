@@ -1,0 +1,86 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #365579
+skinparam LineThickness 1.2
+skinparam classBackgroundColor #F1F5FB
+skinparam classBorderColor #365579
+skinparam componentBackgroundColor #F1F5FB
+skinparam componentBorderColor #365579
+skinparam usecaseBackgroundColor #F1F5FB
+skinparam usecaseBorderColor #365579
+skinparam activityBackgroundColor #F1F5FB
+skinparam activityBorderColor #365579
+skinparam noteBackgroundColor #FFF8E8
+skinparam noteBorderColor #C39A42
+title GoodsHub — Register Goods Sequence
+
+actor User
+boundary "Browser" as Browser
+control "app.py" as App
+control "goods_repository.py" as Repo
+database "SQLite" as DB
+
+User -> Browser : Submit registration form
+Browser -> App : POST /goods with fields and CSRF token
+
+alt Missing or invalid CSRF token
+    App --> Browser : HTTP 400
+    Browser --> User : Display request error
+else Valid CSRF token
+    App -> App : Read fields and parse category ID
+
+    alt Category ID cannot be parsed
+        App --> Browser : Render form with validation message
+        Browser --> User : Display validation message
+    else Category ID parsed
+        App -> Repo : add_goods(...)
+
+        Repo -> Repo : Validate code, name, unit,\nweight and description
+
+        alt Invalid goods fields
+            Repo --> App : Raise ValueError
+            App --> Browser : Render form with validation message
+            Browser --> User : Display validation message
+        else Valid goods fields
+            Repo -> DB : SELECT category by ID
+            DB --> Repo : Category or no match
+
+            alt Category does not exist
+                Repo --> App : Raise ValueError
+                App --> Browser : Render form with validation message
+                Browser --> User : Display validation message
+            else Category exists
+                group One database transaction
+                    Repo -> DB : INSERT goods
+
+                    alt Duplicate goods code
+                        DB --> Repo : Unique constraint error
+                        Repo -> DB : ROLLBACK
+                        Repo --> App : Raise ValueError
+                    else Insert succeeds
+                        DB --> Repo : New goods ID
+                        Repo -> DB : SELECT saved goods snapshot
+                        DB --> Repo : Saved record
+                        Repo -> DB : INSERT Created audit entry
+                        Repo -> DB : COMMIT
+                        Repo --> App : Return goods ID
+                    end
+                end
+
+                alt Registration succeeded
+                    App --> Browser : Redirect to /goods
+                    Browser -> App : GET /goods
+                    App --> Browser : Render updated goods list
+                    Browser --> User : Display goods and success message
+                else Duplicate rejected
+                    App --> Browser : Render form with validation message
+                    Browser --> User : Display duplicate-code message
+                end
+            end
+        end
+    end
+end
+@enduml
