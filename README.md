@@ -1,119 +1,221 @@
-# GoodsHub — Goods Management Module
+<div align="center">
+  <img src="docs/banner.jpg" alt="GoodsHub — goods registry for a logistics transit warehouse" width="100%">
+</div>
 
-Software Design and Architecture Course Project
-Group 2
+<h1 align="center">GoodsHub</h1>
+
+<p align="center">
+  <b>A goods registry and live operations console for a logistics transit warehouse.</b><br>
+  <sub>Catalogue integrity, audit-complete lifecycle, and process diagrams that animate from real data.</sub>
+</p>
+
+<p align="center">
+  <img alt="Python 3.13" src="https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="Flask 3.1" src="https://img.shields.io/badge/Flask-3.1-000000?style=flat-square&logo=flask&logoColor=white">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-WAL-003B57?style=flat-square&logo=sqlite&logoColor=white">
+  <img alt="No build step" src="https://img.shields.io/badge/frontend-vanilla%20JS-6366F1?style=flat-square">
+  <img alt="19 routes smoke-tested" src="https://img.shields.io/badge/routes-19%20smoke--tested-10B981?style=flat-square">
+</p>
+
+---
 
 ## Overview
 
-GoodsHub is a Flask and SQLite goods registry for a logistics transit
-warehouse. It is the Goods Management module: it manages registered goods
-**types** — codes, categories, units, declared weight, photos and the audit
-history around them. Record counts are catalogue entries, not stock quantities.
+GoodsHub manages the **goods types** that pass through a transit warehouse: what they are called, which category they belong to, how they are counted and weighed, what they look like, and every change ever made to them. Record counts are catalogue entries — this module deliberately does not model stock quantities, which belong to the inventory modules around it.
 
-Version 2.0.0 rebuilds the entire interface on a new design system and adds a
-live operations console. **No repository contract, validation rule or audit
-rule changed** — the rebuild is presentation plus new read-only observability
-endpoints.
+Most course prototypes stop at CRUD. This one treats the registry as a **system with state**: goods move through `Active → Archived → Purged` (with `Restored` going back), each transition is written to an append-only audit log inside the same transaction as the data change, and the whole process is rendered as **live SVG diagrams** that read their counts from the same snapshot the tables do.
 
-## Features
+| | |
+|---|---|
+| **Domain** | Goods Management module — Group 2, Software Design & Architecture |
+| **Stack** | Python 3.13 · Flask 3.1 · SQLite (WAL) · Pillow |
+| **Front end** | Jinja templates, hand-written CSS token system, dependency-free SVG charts — no bundler, no CDN |
+| **Persistence** | `instance/goodshub.sqlite3`, photo files on disk, JSON settings |
+| **Runs on** | Windows / macOS / Linux, single process, no external services |
 
-Registry
+---
 
-- Register, edit, search and filter goods.
-- Create, rename and delete unused categories.
-- Archive and restore goods.
-- Permanently delete an archived record while keeping its history.
-- Before/after audit history per record, retained after deletion.
-- Upload a goods photo and show thumbnails in the catalogue.
-- Import goods from CSV with validation and duplicate protection.
-- Export goods matching the current search and status filters.
+## Interface
 
-Interface and operations console
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/dashboard.jpg" alt="Dashboard"><br><sub><b>Control room</b> — hero, KPI cards with sparklines, intake pipeline, trend and status charts, 14-day heatmap, live event stream.</sub></td>
+    <td width="50%"><img src="docs/screenshots/operations-flow.jpg" alt="Operations flow"><br><sub><b>Operations flow</b> — lifecycle state machine, intake pipeline and audit write path, each animated with particles along real transitions.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/analytics.jpg" alt="Analytics"><br><sub><b>Analytics</b> — intake trend, status split, category and unit distribution, record completeness.</sub></td>
+    <td><img src="docs/screenshots/registry.jpg" alt="Goods registry"><br><sub><b>Goods registry</b> — search, filter, inline status actions, and a sticky registration/edit form.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/categories.jpg" alt="Categories"><br><sub><b>Categories</b> — illustrated groups with usage meters, inline rename, guarded delete.</sub></td>
+    <td><img src="docs/screenshots/history.jpg" alt="Audit history"><br><sub><b>Audit history</b> — per-record timeline with before → after field diffs, retained after deletion.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/import.jpg" alt="CSV import"><br><sub><b>CSV import</b> — drag-and-drop intake with header contract and per-row validation report.</sub></td>
+    <td><img src="docs/screenshots/settings.jpg" alt="Settings"><br><sub><b>Settings</b> — identity, theme, default filter, analytics window and database backups.</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/deleted.jpg" alt="Purge log"><br><sub><b>Purge log</b> — permanently deleted records, each still linkable to its retained audit history.</sub></td>
+  </tr>
+</table>
 
-- Dark/light design system with a single token layer and no CSS framework.
-- Live dashboard: hero, KPI cards with sparklines, intake pipeline strip,
-  monthly intake area chart, status donut, category bars, 14-day activity
-  heatmap, category atlas, recent registrations and a live event stream.
-- `/flow` operations console: three animated SVG diagrams — goods lifecycle
-  state machine, intake pipeline, and the audit write path — driven by the
-  same SQL snapshot as the catalogue, with moving particles along each path
-  and a Pause control.
-- Dependency-free SVG chart engine (`static/js/charts.js`) for area, donut,
-  bars and sparklines, with draw-in animation, hover tooltips and legends.
-- `/api/live` polling updates every live counter in place, and `/api/ops`
-  exposes the full operations snapshot as JSON.
-- Reveal-on-scroll, count-up numbers, theme persistence, custom confirmation
-  dialogs, drag-and-drop file zones, reduced-motion and print support.
+<sub>Screenshots captured with reduced motion so the final state is frozen; at runtime charts draw in, numbers count up and diagram particles keep flowing.</sub>
 
-Scope
+---
 
-This project implements Group 2's Goods Management module. User
-authentication, warehouse stock quantities, storage allocation, inbound
-receiving, outbound dispatch and shipment tracking are outside this
-prototype's implemented scope. The prototype targets a local classroom
-demonstration.
+## What it does
 
-## Technology
+**Registry**
+- Register, edit, search and filter goods by code or name, across active and archived records.
+- Categories with case-insensitive uniqueness, rename-in-place, and deletion refused while any goods — archived included — still reference them.
+- Unit-of-measure and weight validation shared by the form, the API and the importer.
 
-- Python 3.13
-- Flask 3.1 and Jinja templates
-- SQLite
-- Pillow for image processing
-- HTML, hand-written CSS and vanilla JavaScript (no build step, no CDN)
+**Lifecycle and audit**
+- Archive and restore; permanent deletion only from the archived state, behind an explicit confirmation step.
+- Every mutation writes a before/after snapshot to `audit_log` in the **same transaction** as the row change.
+- Deleted goods disappear from the catalogue but their history stays readable forever.
 
-## Installation — Windows PowerShell
+**Bulk and media**
+- CSV import with header contract checking, per-row validation and duplicate protection — valid rows commit, invalid rows report and never roll back the batch.
+- Filter-aware CSV export with spreadsheet-injection guards.
+- Photo upload: format, size and pixel-area checks, re-encode to JPEG, generated filenames, thumbnail serving, old-file cleanup after commit.
 
-Open a terminal in the folder containing `app.py`.
+**Observability**
+- `/flow` renders three process diagrams from live SQL counts.
+- `/api/live` powers 6-second in-place counter updates; `/api/ops` exposes the full operations snapshot as JSON.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph UI [Presentation · Jinja + vanilla JS]
+    D["Dashboard"]
+    F["Operations flow"]
+    A["Analytics"]
+    R["Registry · Categories · History<br/>Import · Photo · Settings"]
+  end
+
+  subgraph HTTP [Flask layer · app.py]
+    RT["Routes · form parsing"]
+    GD["Guards: CSRF · status filter<br/>upload limits · error pages"]
+  end
+
+  subgraph DOM [Domain services]
+    G["goods_repository"]
+    C["category_repository"]
+    P["photo_repository<br/>+ photo_storage"]
+    I["csv_import_service"]
+    AU["audit_repository"]
+    DA["dashboard_repository"]
+    FL["flow_repository<br/>(read-only)"]
+  end
+
+  DB[("SQLite · WAL<br/>categories · goods · audit_log")]
+  FS[("Photo files<br/>instance/goods_photos")]
+
+  UI --> HTTP --> DOM
+  G --> DB
+  C --> DB
+  I --> G
+  AU --> DB
+  DA --> DB
+  FL --> DB
+  P --> DB
+  P --> FS
+```
+
+Three ideas hold the design together:
+
+1. **One writer per rule.** Validation lives in the repositories, not in the views, so the form, the CSV importer and any future API all inherit identical rules.
+2. **One transaction per mutation.** The goods row and its audit entry commit or fail together — history can never disagree with the catalogue.
+3. **Read models are separate.** `dashboard_repository` and `flow_repository` only read; the interface can be rebuilt or replaced without touching a single business rule.
+
+---
+
+## Data model
+
+```mermaid
+erDiagram
+  CATEGORIES ||--o{ GOODS : "groups (ON DELETE RESTRICT)"
+  GOODS ||--o{ AUDIT_LOG : "entity_type = goods"
+  CATEGORIES ||--o{ AUDIT_LOG : "entity_type = category"
+
+  CATEGORIES {
+    int id PK
+    string name UK "1-60 chars, NOCASE"
+  }
+  GOODS {
+    int id PK
+    string code UK "2-30 chars, NOCASE"
+    string name
+    int category_id FK
+    string unit
+    real weight "greater than 0, max 1e6 kg"
+    string status "active or archived"
+    string description
+    string photo_filename
+    datetime created_at
+    datetime updated_at
+  }
+  AUDIT_LOG {
+    int id PK
+    string entity_type "goods or category"
+    int entity_id
+    string entity_label
+    string action "created updated archived restored deleted photo_updated"
+    json before_json
+    json after_json
+    datetime created_at
+  }
+```
+
+`audit_log` is append-only and intentionally not foreign-keyed to `goods`: a purged record must remain traceable, so the log stores its own label and JSON snapshots. The `goods → categories` foreign key is `RESTRICT`, which is what makes "you cannot delete a category that is in use" a database truth rather than a UI opinion.
+
+---
+
+## Live endpoints
+
+| Endpoint | Purpose | Shape |
+|---|---|---|
+| `GET /flow` | Operations console with the three animated diagrams | HTML |
+| `GET /api/live` | Counters for the polling layer (totals, active, archived, 24 h events) | JSON |
+| `GET /api/ops` | Full operations snapshot: counts, ratios, mass, action mix, lifecycle, pipeline, 14-day matrix | JSON |
+| `GET /goods/export` | Filter-aware CSV export (`q`, `status`) | `text/csv` |
+| `GET /goods/import/template` | Download import template | `text/csv` |
+
+Both JSON endpoints are read-only and reuse the same connection policy as the pages, so they cannot drift from what the UI shows.
+
+---
+
+## Interface system
+
+- **Tokens, not ad-hoc colours.** One `:root` layer defines surfaces, text, borders and accents for light and dark; components consume variables only.
+- **Charts without a library.** `charts.js` draws area, donut, bar and sparkline charts as SVG from JSON declared in the page, with draw-in animation, hover tooltips and legend linking.
+- **Motion with a purpose.** Reveal-on-scroll, count-up figures, a 6-second live pulse, and SVG path particles; every animation is disabled under `prefers-reduced-motion`.
+- **Accessible by default.** Skip link, labelled controls, focus-visible rings, keyboard-closable dialogs, and a print stylesheet that drops the chrome.
+
+---
+
+## Quick start
 
 ```powershell
+git clone <your-repo-url>
+cd Goods_Management
+
 py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m flask --app app run
 ```
 
-Then open <http://127.0.0.1:5000/>. Press Ctrl+C to stop the server.
+Open <http://127.0.0.1:5000/>. The database, photo folders and settings file are created under `instance/` on first run; start from **Categories**, then register or import goods.
 
-## Database initialisation
+<sub>macOS / Linux: replace the interpreter path with <code>.venv/bin/python</code>.</sub>
 
-The application creates missing tables and adds the photo column at startup.
-If the `instance` folder is present, its database and photos are used.
-Starting without it gives an empty database — add categories on the Categories
-page before registering or importing goods.
-
-## Main files
-
-| File | Responsibility |
-|---|---|
-| `app.py` | HTTP routes, form parsing, CSRF, security headers, error pages |
-| `database.py` | SQLite connections, schema bootstrap, backups |
-| `goods_repository.py` | Goods validation, storage, lifecycle operations |
-| `category_repository.py` | Category operations and deletion protection |
-| `audit_repository.py` | Goods history and deleted-record history retrieval |
-| `dashboard_repository.py` | Summary counts and recently registered goods |
-| `photo_repository.py` | Photo column, photo change logging |
-| `photo_storage.py` | Image validation and file storage |
-| `csv_import_service.py` | CSV parsing and row-by-row import |
-| `flow_repository.py` | Read-only operations snapshot (`/flow`, `/api/live`, `/api/ops`) |
-| `templates/` | Jinja pages: layout, macros, dashboard, flow, registry, … |
-| `static/css/app.css` | Design system: tokens, layout, components, motion |
-| `static/js/charts.js` | SVG chart engine |
-| `static/js/app.js` | Theme, navigation, reveal, polling, dialogs, dropzones |
-| `static/img/` | Logo artwork and generated illustration set |
-
-## Data storage
-
-- Database: `instance/goodshub.sqlite3`
-- Photos: `instance/goods_photos/` (thumbnails in `thumbs/`)
-- Settings: `instance/settings.json`
-- Backups: `instance/backups/`
-- Local session signing key: `instance/secret.key`
-
-The application generates a session key if one does not exist. Do not include
-an existing `secret.key` in a shared submission package.
+---
 
 ## CSV import
-
-Use UTF-8 encoding and these column headings:
 
 ```csv
 code,name,category,unit,weight,description
@@ -121,57 +223,81 @@ IMP-001,USB cable,Electronics,Piece,0.05,One metre cable
 IMP-002,Notebook,Office Supplies,Piece,0.20,A5 notebook
 ```
 
-Rules:
+| Rule | Behaviour |
+|---|---|
+| Categories | must already exist, matched by name |
+| Codes | unique, 2–30 chars, stored upper-case |
+| Units | `Piece · Box · Pack · Bag · Bottle · Set · Roll` |
+| Weight | `> 0` and `≤ 1,000,000 kg` |
+| Batch | max 500 goods / 2 MB, UTF-8 (BOM tolerated) |
+| Duplicates | skipped, never overwritten |
+| Failures | isolated per row, with a message and line number |
 
-- Categories must already exist.
-- Goods codes must be unique.
-- Allowed units: Piece, Box, Pack, Bag, Bottle, Set, Roll.
-- Weight must be greater than zero and at most 1,000,000 kg.
-- Maximum import size: 500 goods and 2 MB.
-- Imported goods start as Active.
-- Valid rows are saved; invalid rows receive individual messages.
-- Existing goods are not overwritten.
-- Photos are uploaded separately.
+---
 
-The exported CSV uses a wider report format and is not directly re-importable.
+## Business rules
 
-## Goods photos
+| Rule | Enforced by |
+|---|---|
+| Goods must be archived before permanent deletion | repository + route guard |
+| Permanent deletion keeps the audit history | append-only `audit_log` |
+| Categories in use cannot be deleted | SQL `ON DELETE RESTRICT` + repository check |
+| A mutation and its audit entry are atomic | single `BEGIN IMMEDIATE` transaction |
+| Deletion needs explicit confirmation | form contract (`confirmation=delete`) |
+| Dashboard totals count records, not stock | read model definition |
 
-Supported input formats: JPG, PNG and WebP. Maximum upload size: 5 MB.
-Maximum accepted image area: 20 million pixels. Images are resized to fit
-within 1200 × 1200 and stored as JPEG with generated filenames. Replacing a
-photo deletes the previous file after the new filename is committed.
+---
 
-## Important business rules
+## Project layout
 
-- Goods must be archived before permanent deletion.
-- Permanent deletion keeps the goods audit history.
-- Categories used by active or archived goods cannot be deleted.
-- Goods changes and their audit entries are written in one transaction.
-- Dashboard totals count registered goods records, not stock units.
-- Deletion requires an explicit confirmation step in addition to the archived
-  state.
+```
+Goods_Management/
+├── app.py                  # routes, CSRF, form parsing, security headers, error pages
+├── database.py             # connections, schema bootstrap, WAL, backups
+├── goods_repository.py     # validation, storage, lifecycle
+├── category_repository.py  # categories + deletion protection
+├── audit_repository.py     # history retrieval, change diffs, deleted records
+├── dashboard_repository.py # summary counts, recent registrations
+├── photo_repository.py     # photo column + photo change logging
+├── photo_storage.py        # image validation, resize, thumbnails
+├── csv_import_service.py   # CSV parsing and row-by-row import
+├── flow_repository.py      # read-only operations snapshot
+├── templates/              # layout, macros, and one template per page
+├── static/
+│   ├── css/app.css         # design system: tokens, layout, components, motion
+│   ├── js/charts.js        # SVG chart engine
+│   ├── js/app.js           # theme, nav, reveal, polling, dialogs, dropzones
+│   └── img/                # logo artwork and generated illustration set
+├── instance/               # database, photos, settings, backups (runtime)
+└── docs/                   # SRS, UML, architecture notes, screenshots
+```
 
-## Backup
+---
 
-1. Stop the application.
-2. Copy the whole project folder, including `instance`.
-3. Keep the copy separate from the working folder.
+## Documentation
 
-The Settings page can also write a consistent copy to `instance/backups/` and
-keeps the ten most recent files.
+| Document | Contents |
+|---|---|
+| [SRS](docs/SRS.md) | functional and non-functional requirements, use cases |
+| [Project proposal](docs/project_proposal.md) | scope, stakeholders, success criteria |
+| [Architecture & database](docs/Architecture_and_Database.md) | layering, schema decisions, transaction strategy |
+| [UML](docs/UML_Diagrams.md) | use case, class, sequence, activity, component |
+| [Diagram set](docs/GoodsHub_Diagrams/index.html) | all diagrams as SVG / PNG with sources |
+| [Testing report](docs/Testing_Report.md) | test matrix and results |
 
-## Manual demonstration
+---
 
-1. Create a category.
-2. Register a goods record.
-3. Edit it and inspect its history.
-4. Upload a photo and check the dashboard thumbnail.
-5. Search and filter goods.
-6. Export a filtered CSV report.
-7. Import new goods from CSV; repeat to show duplicate protection.
-8. Import invalid data to show validation messages.
-9. Archive, restore, then archive a test record again.
-10. Permanently delete the test record and open its retained history.
-11. Open **Operations flow** and pause/resume the diagrams while talking.
-12. Switch theme with the header button and reload to show persistence.
+## Scope
+
+**In scope** — goods types, categories, lifecycle (archive / restore / purge), audit trail, photos, CSV import/export, dashboards and process observability.
+
+**Out of scope, by design** — authentication and roles, stock quantities, bin allocation, inbound receiving, outbound dispatch, shipment tracking. Those belong to the neighbouring modules of the same transit warehouse system and appear in the diagrams as adjacent processes.
+
+**Possible next steps** — role-based access with per-user audit attribution, scheduled exports, a REST API over the same repositories, and WebSocket push in place of polling.
+
+---
+
+<p align="center">
+  <b>Group 2</b> — Software Design &amp; Architecture course project<br>
+  <sub>Built with Flask, SQLite and a lot of hand-written SVG.</sub>
+</p>
