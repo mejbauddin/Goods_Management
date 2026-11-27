@@ -1,50 +1,133 @@
 {% extends "_layout.html" %}
 {% block title %}Settings{% endblock %}
 {% block heading %}Settings{% endblock %}
+{% block crumb %}Workspace · configuration{% endblock %}
 
 {% block content %}
-<p class="sub">Personalise how the application looks and behaves.</p>
 
-<form method="post" class="card" style="max-width:560px" autocomplete="off">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Workspace</span>
+    <h2 class="page-title">Settings</h2>
+    <p class="lede">Name, appearance, default filter and chart range. Choices are stored in
+      <span class="mono small">instance/settings.json</span> and applied on the next request.</p>
+  </div>
+  <div class="page-actions">
+    <span class="count-pill"><b>{{ backups | length }}</b> backups kept</span>
+  </div>
+</div>
 
-  <label for="app_name">Application name</label>
-  <input type="text" id="app_name" name="app_name" maxlength="40" required
-    value="{{ form.app_name if form is defined else settings.app_name }}">
-  <div class="help">Shown in the sidebar and page titles (max 40 chars).</div>
+<div class="two-col">
 
-  <label for="theme">Theme</label>
-  <select id="theme" name="theme">
-    {% for t in themes %}
-    <option value="{{ t }}" {% if (form.theme if form is defined else settings.theme)==t %}selected{% endif %}>
-      {{ {'auto':'Automatic (follow device)','light':'Light','dark':'Dark'}[t] }}
-    </option>
-    {% endfor %}
-  </select>
+  <section class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Identity &amp; appearance</h2>
+      <span class="hint">instantly applied</span>
+    </div>
 
-  <label for="default_status_filter">Default goods list filter</label>
-  <select id="default_status_filter" name="default_status_filter">
-    {% set cur = form.default_status_filter if form is defined else settings.default_status_filter %}
-    {% for s in status_filters %}
-    <option value="{{ s }}" {% if cur==s %}selected{% endif %}>{{ s|capitalize }}</option>
-    {% endfor %}
-  </select>
+    <form method="POST" action="{{ url_for('settings_page') }}" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-  <label for="chart_months">Monthly chart range</label>
-  <select id="chart_months" name="chart_months">
-    {% set cur = (form.chart_months|int if form is defined else settings.chart_months) %}
-    {% for m in month_choices %}
-    <option value="{{ m }}" {% if cur==m %}selected{% endif %}>Last {{ m }} months</option>
-    {% endfor %}
-  </select>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label class="lbl" for="app-name">Application name</label>
+          <input id="app-name" name="app_name" type="text" value="{{ form['app_name'] }}" maxlength="60" required>
+          <p class="help">Shown in the sidebar, page titles and exports.</p>
+        </div>
 
-  <button class="btn" type="submit">Save settings</button>
-</form>
+        <div class="field">
+          <label class="lbl" for="theme">Theme</label>
+          <select id="theme" name="theme">
+            {% for theme in themes %}
+            <option value="{{ theme }}" {% if form['theme'] == theme %}selected{% endif %}>
+              {{ {'auto': 'Follow system', 'light': 'Light', 'dark': 'Dark'}[theme] }}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="help">The header switch overrides this locally.</p>
+        </div>
 
-<form method="post" action="{{ url_for('backup_page') }}" class="card" style="max-width:560px; margin-top:1rem">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <h2>Database backup</h2>
-  <p class="help">Saves a copy in <code>instance/backups</code>. The 10 newest are kept.</p>
-  <button class="btn" type="submit">Back up now</button>
-</form>
+        <div class="field">
+          <label class="lbl" for="status-filter">Default status filter</label>
+          <select id="status-filter" name="default_status_filter">
+            {% for value in status_filters %}
+            <option value="{{ value }}" {% if form['default_status_filter'] == value %}selected{% endif %}>
+              {{ {'all': 'All records', 'active': 'Active only', 'archived': 'Archived only'}[value] }}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="help">Used when the registry opens without a query.</p>
+        </div>
+
+        <div class="field span-2">
+          <label class="lbl" for="chart-months">Analytics window</label>
+          <select id="chart-months" name="chart_months">
+            {% for months in month_choices %}
+            <option value="{{ months }}" {% if form['chart_months'] == months|string %}selected{% endif %}>
+              Last {{ months }} months
+            </option>
+            {% endfor %}
+          </select>
+          <p class="help">Drives the monthly intake chart on the analytics page.</p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn" type="submit">Save settings</button>
+        <a class="link" href="{{ url_for('settings_page') }}">Reset form</a>
+      </div>
+    </form>
+  </section>
+
+  <div class="stack" style="display:grid; gap:18px; align-content:start">
+
+    <section class="card pad" data-reveal>
+      <div class="card-head" style="padding:0">
+        <h2>Database backup</h2>
+        <span class="hint">sqlite3</span>
+      </div>
+      <p class="small muted" style="margin-top:8px">
+        Writes a consistent copy to <span class="mono">instance/backups/</span> and keeps the ten most recent files.
+      </p>
+
+      <form method="POST" action="{{ url_for('backup_page') }}" style="margin-top:12px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn block" type="submit">Create backup now</button>
+      </form>
+
+      <hr class="hairline">
+
+      {% if backups %}
+      <div class="card-head" style="padding:0">
+        <h3 style="font-size:14px">Recent files</h3>
+      </div>
+      <ul class="rules" style="margin-top:8px">
+        {% for backup in backups %}
+        <li class="mono small">{{ backup.name }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="small muted" style="margin:0">No backups yet. Create one before a demo.</p>
+      {% endif %}
+    </section>
+
+    <section class="card pad" data-reveal>
+      <div class="card-head" style="padding:0">
+        <h2>About this build</h2>
+        <span class="hint">v{{ app_version }}</span>
+      </div>
+      <div style="margin-top:10px">
+        <div class="stat-inline"><span class="k">Application</span><span class="v">{{ app_name }}</span></div>
+        <div class="stat-inline"><span class="k">Version</span><span class="v mono">{{ app_version }}</span></div>
+        <div class="stat-inline"><span class="k">Asset revision</span><span class="v mono">{{ asset_version }}</span></div>
+        <div class="stat-inline"><span class="k">Stack</span><span class="v">Flask · SQLite · Pillow</span></div>
+      </div>
+      <p class="small muted" style="margin:10px 0 0">
+        Repository contracts, audit rules and validation are unchanged from the original build — this version replaces
+        the interface and adds an operations console.
+      </p>
+    </section>
+  </div>
+</div>
+
 {% endblock %}

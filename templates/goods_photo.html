@@ -1,48 +1,85 @@
 {% extends "_layout.html" %}
-{% block title %}Goods photo{% endblock %}
-{% block heading %}Goods photo{% endblock %}
-
-{% block head %}
-<style>
-    .photo {
-        display: block;
-        width: 100%;
-        max-height: 360px;
-        object-fit: contain;
-        margin: 20px 0;
-        border-radius: 12px;
-        background: var(--bg);
-    }
-
-    .empty-photo {
-        padding: 40px 20px;
-        text-align: center;
-        background: var(--bg);
-        border: 1px dashed var(--border);
-        border-radius: 12px;
-        margin: 20px 0;
-    }
-</style>
-{% endblock %}
+{% from "_macros.html" import status_badge %}
+{% block title %}Photo · {{ item.code }}{% endblock %}
+{% block heading %}{{ item.code }}{% endblock %}
+{% block crumb %}Catalogue · visual record{% endblock %}
 
 {% block content %}
-<p class="sub"><strong>{{ item.code }} · {{ item.name }}</strong></p>
 
-<section class="card">
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Visual record</span>
+    <h2 class="page-title">{{ item.name }}</h2>
+    <p class="lede">One photo per goods type. Uploads are re-encoded, capped in size and served through a generated
+      filename so no user-supplied path is ever trusted.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn ghost" href="{{ url_for('goods_page') }}">Back to registry</a>
+    <a class="btn ghost" href="{{ url_for('goods_history_page', goods_id=item.id) }}">History</a>
+  </div>
+</div>
+
+<div class="two-col">
+
+  <section class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Current photo</h2>
+      {% if item.photo_filename %}<span class="hint">image on file</span>{% else %}<span class="hint">none</span>{% endif %}
+    </div>
+
     {% if item.photo_filename %}
-    <img class="photo" src="{{ url_for('goods_photo_file', filename=item.photo_filename) }}"
-        alt="Photo of {{ item.name }}">
+    <figure class="photo-frame" style="margin-top:14px">
+      <img src="{{ url_for('goods_photo_file', filename=item.photo_filename) }}"
+           alt="Photo of {{ item.name }}" loading="lazy">
+      <figcaption class="small muted mono">{{ item.photo_filename }}</figcaption>
+    </figure>
     {% else %}
-    <div class="empty-photo muted">No photo uploaded yet.</div>
+    <div class="empty-xl" style="padding:30px 10px">
+      <img src="{{ url_for('static', filename='img/empty-box.jpg') }}" alt="">
+      <h2>No photo attached</h2>
+      <p>Upload one from the panel on the right to complete this record.</p>
+    </div>
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('goods_photo_page', goods_id=item.id) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="photo">Choose a photo</label>
-        <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required>
-        <p class="help">JPG, PNG, or WebP. Max 5 MB. Uploading replaces the current photo.</p>
-        <button class="btn" type="submit">Save photo</button>
-        <a href="{{ url_for('goods_history_page', goods_id=item.id) }}" style="margin-left:1rem">View change history</a>
+    <hr class="hairline">
+
+    <div class="stat-inline"><span class="k">Goods code</span><span class="v mono">{{ item.code }}</span></div>
+    <div class="stat-inline"><span class="k">Category</span><span class="v">{{ item.category_name }}</span></div>
+    <div class="stat-inline"><span class="k">Status</span><span class="v">{{ status_badge(item.status) }}</span></div>
+    <div class="stat-inline"><span class="k">Unit · weight</span><span class="v">{{ item.unit }} · {{ item.weight }} kg</span></div>
+  </section>
+
+  <section class="card pad" data-reveal style="position:sticky; top:86px">
+    <div class="card-head" style="padding:0">
+      <h2>{% if item.photo_filename %}Replace photo{% else %}Upload photo{% endif %}</h2>
+      <span class="hint">JPG · PNG · WEBP</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('goods_photo_page', goods_id=item.id) }}"
+          enctype="multipart/form-data" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <label class="dropzone" data-dropzone for="photo-file">
+        <span class="dz-ico">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><circle cx="9" cy="10.5" r="1.6"/><path d="M5 17l5.5-5 4 3.5 3-2.5 3 4"/></svg>
+        </span>
+        <span class="dz-title">Drop an image here or browse</span>
+        <span class="dz-sub">Re-encoded to JPEG, long edge capped</span>
+        <input id="photo-file" type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" required>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn" type="submit">{{ "Replace photo" if item.photo_filename else "Upload photo" }}</button>
+        <a class="link" href="{{ url_for('goods_page') }}">Cancel</a>
+      </div>
     </form>
-</section>
+
+    <div class="note" style="margin-top:8px">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+      <span>The old image is deleted from disk only after the new filename is committed to the database, so a failure
+        never leaves a broken record.</span>
+    </div>
+  </section>
+</div>
+
 {% endblock %}

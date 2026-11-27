@@ -1,27 +1,80 @@
 {% extends "_layout.html" %}
-{% block title %}Confirm deletion{% endblock %}
-{% block heading %}Delete goods permanently?{% endblock %}
+{% block title %}Delete {{ item.code }}{% endblock %}
+{% block heading %}Delete goods{% endblock %}
+{% block crumb %}Catalogue · destructive{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width:650px">
-    <p><strong>{{ item["code"] }} · {{ item["name"] }}</strong><br>
-        Record ID: {{ item["id"] }} · Status: Archived</p>
 
-    <div class="flash error" role="alert">
-        This removes the goods record from the catalog. You cannot restore it afterward.
-        Its change history will remain available.
+<div class="page-head">
+  <div>
+    <span class="eyebrow" style="color:var(--bad)">Destructive action</span>
+    <h2 class="page-title">Permanently delete {{ item.code }}</h2>
+    <p class="lede">This is the only irreversible operation in the system. Read the consequences before confirming.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn ghost" href="{{ url_for('goods_page', status='archived') }}">Keep it archived</a>
+  </div>
+</div>
+
+<div class="two-col">
+
+  <section class="card pad" data-reveal style="border-color:color-mix(in srgb,var(--bad) 35%,transparent)">
+    <div class="card-head" style="padding:0">
+      <h2>What will be removed</h2>
+      <span class="badge bad"><span class="dot"></span>final</span>
     </div>
 
-    <form method="POST" action="{{ url_for('delete_goods_page', goods_id=item['id']) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label style="display:flex; align-items:flex-start; gap:10px; font-weight:500">
-            <input type="checkbox" name="confirmation" value="delete" required style="margin-top:6px">
-            <span>I understand that this goods record will be permanently deleted.</span>
-        </label>
-        <div style="display:flex; gap:16px; align-items:center; margin-top:16px">
-            <button class="btn danger" type="submit">Permanently delete</button>
-            <a href="{{ url_for('goods_page') }}">Cancel</a>
-        </div>
+    <div style="margin-top:14px">
+      <div class="stat-inline"><span class="k">Goods code</span><span class="v mono">{{ item.code }}</span></div>
+      <div class="stat-inline"><span class="k">Name</span><span class="v">{{ item.name }}</span></div>
+      <div class="stat-inline"><span class="k">Category</span><span class="v">{{ item.category_name }}</span></div>
+      <div class="stat-inline"><span class="k">Unit · weight</span><span class="v">{{ item.unit }} · {{ item.weight }} kg</span></div>
+      <div class="stat-inline"><span class="k">Status</span><span class="v">archived</span></div>
+    </div>
+
+    <hr class="hairline">
+
+    <ul class="rules">
+      <li><b>The goods row</b> is deleted from the database.</li>
+      <li><b>The photo file</b> is removed from disk.</li>
+      <li><b>The audit history</b> stays — every event is kept forever and remains readable.</li>
+      <li>The code can be reused afterwards, because uniqueness only applies to existing rows.</li>
+    </ul>
+  </section>
+
+  <section class="card pad" data-reveal style="position:sticky; top:86px">
+    <div class="card-head" style="padding:0">
+      <h2>Confirm</h2>
+      <span class="hint">step 2 of 2</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('goods_delete_page', goods_id=item.id) }}"
+          data-confirm="Delete {{ item.code }} permanently? The goods row and photo are removed; the audit history is kept."
+          data-confirm-title="Delete permanently"
+          data-confirm-ok="Delete for good"
+          data-confirm-danger="1"
+          style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <label class="check-row">
+        <input type="checkbox" name="confirmation" value="delete" required>
+        <span>I understand that <b>{{ item.code }}</b> — {{ item.name }} — will be permanently deleted and cannot be
+          restored.</span>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn danger" type="submit">Delete permanently</button>
+        <a class="link" href="{{ url_for('goods_page', status='archived') }}">Cancel</a>
+      </div>
     </form>
+
+    <hr class="hairline">
+
+    <p class="small muted" style="margin:0">
+      Want it gone from the working catalogue but still recoverable? Archiving is the reversible option — restore it
+      any time from the registry.
+    </p>
+  </section>
 </div>
+
 {% endblock %}

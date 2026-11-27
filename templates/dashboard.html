@@ -1,375 +1,407 @@
 {% extends "_layout.html" %}
-{% block title %}Dashboard{% endblock %}
-{% block heading %}Dashboard{% endblock %}
-
-{% block head %}
-<style>
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-        margin: 24px 0;
-    }
-
-    .stat-card {
-        display: block;
-        padding: 20px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--surface);
-        color: inherit;
-        text-decoration: none;
-        box-shadow: var(--shadow);
-    }
-
-    .stat-card:hover {
-        border-color: var(--accent);
-    }
-
-    .stat-label {
-        margin: 0;
-        color: var(--muted);
-        font-size: 14px;
-    }
-
-    .stat-number {
-        display: block;
-        margin-top: 10px;
-        font-size: 34px;
-        font-weight: 700;
-    }
-
-    .blue {
-        color: #2563eb
-    }
-
-    .green {
-        color: #15803d
-    }
-
-    .gray {
-        color: #475569
-    }
-
-    .purple {
-        color: #7c3aed
-    }
-
-    .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin: 0 0 24px;
-    }
-
-    .actions .btn {
-        margin-top: 0;
-    }
-
-    .btn.outline {
-        background: transparent;
-        color: var(--text);
-        border: 1px solid var(--border);
-    }
-
-    .insights {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .columns {
-        display: flex;
-        align-items: flex-end;
-        gap: 10px;
-        height: 170px;
-    }
-
-    .column {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        height: 100%;
-    }
-
-    .column-value {
-        margin-bottom: 4px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .column-bar {
-        width: 100%;
-        max-width: 44px;
-        min-height: 3px;
-        border-radius: 8px 8px 0 0;
-        background: linear-gradient(180deg, var(--c1), var(--c2));
-    }
-
-    .column-label {
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 11px;
-    }
-
-    .bars {
-        display: grid;
-        gap: 14px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .bar-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
-        font-size: 14px;
-    }
-
-    .bar-row span:last-child {
-        color: var(--muted);
-    }
-
-    .bar-track {
-        height: 10px;
-        overflow: hidden;
-        border-radius: 99px;
-        background: var(--border);
-    }
-
-    .bar-fill {
-        height: 100%;
-        border-radius: 99px;
-        background: var(--accent);
-    }
-
-    .dashboard-goods {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .dashboard-photo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        width: 52px;
-        height: 52px;
-        overflow: hidden;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--bg);
-        color: var(--accent);
-        text-decoration: none;
-    }
-
-    .dashboard-photo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .dashboard-photo span {
-        font-size: 11px;
-        padding: 4px;
-        text-align: center;
-    }
-
-    .stat-hint {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .activity ul {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .activity li {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 11px 0;
-        border-bottom: 1px solid var(--border);
-        font-size: 14px;
-    }
-
-    .activity li:last-child {
-        border-bottom: none;
-    }
-
-    .activity time {
-        margin-left: auto;
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .note {
-        margin-top: 20px;
-        color: var(--muted);
-        font-size: 13px;
-    }
-
-    @media (max-width:900px) {
-        .stats {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .insights {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width:500px) {
-        .stats {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
+{% from "_macros.html" import status_badge, thumb, cat_image, spark_icon %}
+{% block title %}Control room{% endblock %}
+{% block heading %}Control room{% endblock %}
+{% block crumb %}Transit warehouse · overview{% endblock %}
 
 {% block content %}
-<p class="sub">An overview of your goods catalog.</p>
 
-<section class="stats" aria-label="Catalog summary">
-    <a class="stat-card" href="{{ url_for('goods_page') }}">
-        <p class="stat-label">Total goods records</p>
-        <span class="stat-number blue">{{ dashboard["total_goods"] }}</span>
-    </a>
-    <a class="stat-card" href="{{ url_for('goods_page', status='active') }}">
-        <p class="stat-label">Active goods</p>
-        <span class="stat-number green">{{ dashboard["active_goods"] }}</span>
-        <span class="stat-hint">{{ dashboard["active_percent"] }}% of all goods</span>
-    </a>
-    <a class="stat-card" href="{{ url_for('goods_page', status='archived') }}">
-        <p class="stat-label">Archived goods</p>
-        <span class="stat-number gray">{{ dashboard["archived_goods"] }}</span>
-        <span class="stat-hint">{{ dashboard["archived_percent"] }}% of all goods</span>
-    </a>
-    <a class="stat-card" href="{{ url_for('categories_page') }}">
-        <p class="stat-label">Categories</p>
-        <span class="stat-number purple">{{ dashboard["total_categories"] }}</span>
-    </a>
+<!-- ============ HERO ============ -->
+<section class="hero" data-reveal>
+  <div class="hero-media">
+    <img src="{{ url_for('static', filename='img/hero-warehouse.jpg') }}"
+         alt="Smart transit warehouse with illuminated racks and scanning beams" fetchpriority="high">
+    <div class="hero-copy">
+      <span class="hero-tag"><span class="dot-mini" style="background:#34d399"></span> live registry</span>
+      <h2>Every box, <em>traceable</em><br>from intake to archive.</h2>
+      <p>One control room for goods codes, categories, photos and change history across the transit warehouse.</p>
+      <div class="page-actions">
+        <a class="btn" href="{{ url_for('goods_page') }}">
+          Register goods
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </a>
+        <a class="btn ghost" href="{{ url_for('flow_page') }}" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#f0f4ff">
+          Open live flow
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <span class="bar"></span>
+      <div>
+        <div class="v"><span class="count" data-count="{{ ops.counts.goods_total }}">{{ ops.counts.goods_total }}</span></div>
+        <div class="l">registered goods</div>
+      </div>
+    </div>
+    <div class="hero-stat">
+      <span class="bar" style="background:linear-gradient(180deg,#34d399,#10b981)"></span>
+      <div>
+        <div class="v"><span data-live="active_goods">{{ ops.counts.active }}</span> active</div>
+        <div class="l">{{ ops.ratios.active_pct }}% of the registry</div>
+      </div>
+    </div>
+    <div class="hero-stat">
+      <span class="bar" style="background:linear-gradient(180deg,#fbbf24,#f59e0b)"></span>
+      <div>
+        <div class="v">{{ ops.mass.total_kg }} <span style="font-size:.8rem;font-weight:600">kg</span></div>
+        <div class="l">declared unit mass</div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<div class="actions">
-    <a class="btn" href="{{ url_for('goods_page') }}">Manage goods</a>
-    <a class="btn outline" href="{{ url_for('categories_page') }}">Manage categories</a>
-    <a class="btn outline" href="{{ url_for('export_goods') }}">Export all goods</a>
-</div>
+<!-- ============ KPIs ============ -->
+<section class="grid grid-4" style="margin-bottom:18px">
+  <article class="kpi tilt" data-reveal>
+    <div class="kpi-top">
+      <span class="kpi-label">Total records</span>
+      <span class="kpi-ico">{{ spark_icon('box') }}</span>
+    </div>
+    <div class="kpi-value"><span data-count="{{ dashboard.total_goods }}" data-live="total_goods">{{ dashboard.total_goods }}</span>
+      <span class="unit">items</span></div>
+    <div class="kpi-foot">
+      <span class="delta up">+{{ trend[-1].count if trend else 0 }} this month</span>
+      <span>{{ ops.counts.categories }} categories</span>
+    </div>
+    <div class="spark" id="sparkTotal"></div>
+  </article>
 
-<section class="insights">
-    <div class="card">
-        <h2>Goods added per month</h2>
-        {% set peak = [dashboard["monthly"] | map(attribute="count") | max, 1] | max %}
-        <div class="columns" role="img" aria-label="Goods added per month">
-            {% for m in dashboard["monthly"] %}
-            <div class="column" title="{{ m.month }}: {{ m.count }}">
-                <span class="column-value">{{ m.count }}</span>
-                <div class="column-bar" style="height: {{ (m.count * 100 / peak) | round(1) }}%"></div>
-                <span class="column-label">{{ m.month[2:] }}</span>
-            </div>
-            {% endfor %}
+  <article class="kpi tilt" data-reveal>
+    <div class="kpi-top">
+      <span class="kpi-label">Active now</span>
+      <span class="kpi-ico" style="background:color-mix(in srgb,var(--good) 16%,transparent)">
+        <svg viewBox="0 0 24 24" style="stroke:var(--good)"><path d="M4 12.5l5 5L20 6.5"/></svg>
+      </span>
+    </div>
+    <div class="kpi-value"><span data-count="{{ dashboard.active_goods }}" data-live="active_goods">{{ dashboard.active_goods }}</span>
+      <span class="unit">live</span></div>
+    <div class="kpi-foot">
+      <span class="delta up">{{ ops.ratios.active_pct }}%</span>
+      <span>of all records</span>
+    </div>
+    <div class="spark" id="sparkActive"></div>
+  </article>
+
+  <article class="kpi tilt" data-reveal>
+    <div class="kpi-top">
+      <span class="kpi-label">Archived</span>
+      <span class="kpi-ico" style="background:color-mix(in srgb,var(--warn) 16%,transparent)">
+        <svg viewBox="0 0 24 24" style="stroke:var(--warn)"><rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5.5 8.5v9.5h13V8.5M9.5 12.5h5"/></svg>
+      </span>
+    </div>
+    <div class="kpi-value"><span data-count="{{ dashboard.archived_goods }}" data-live="archived_goods">{{ dashboard.archived_goods }}</span>
+      <span class="unit">held</span></div>
+    <div class="kpi-foot">
+      <span class="delta flat">{{ ops.ratios.archived_pct }}%</span>
+      <span>restorable at any time</span>
+    </div>
+    <div class="spark" id="sparkArchived"></div>
+  </article>
+
+  <article class="kpi tilt" data-reveal>
+    <div class="kpi-top">
+      <span class="kpi-label">Photo coverage</span>
+      <span class="kpi-ico">{{ spark_icon('photo') }}</span>
+    </div>
+    <div class="kpi-value"><span data-count="{{ ops.counts.photos }}" data-live="photos">{{ ops.counts.photos }}</span>
+      <span class="unit">captured</span></div>
+    <div class="kpi-foot">
+      <span class="delta {% if ops.counts.without_photo %}flat{% else %}up{% endif %}">{{ ops.counts.without_photo }} missing</span>
+      <span>{{ ops.ratios.photo_pct }}% complete</span>
+    </div>
+    <div class="spark" id="sparkPhoto"></div>
+  </article>
+</section>
+
+<!-- ============ PIPELINE STRIP ============ -->
+<section class="card pad" data-reveal style="margin-bottom:18px">
+  <div class="row-between" style="margin-bottom:14px">
+    <div>
+      <h2 class="card-title">Goods intake pipeline</h2>
+      <p class="card-sub" style="margin:0">How records move through the registry right now.</p>
+    </div>
+    <a class="chip-btn" href="{{ url_for('flow_page') }}">Full flow map →</a>
+  </div>
+
+  <div class="flow-strip">
+    <div class="strip-step">
+      <span class="st-k">Received</span>
+      <span class="st-v"><span data-count="{{ ops.pipeline.received }}">{{ ops.pipeline.received }}</span></span>
+      <span class="st-m">records entered</span>
+    </div>
+    <div class="strip-arrow"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L19 12l-6 5.5"/></svg></div>
+
+    <div class="strip-step">
+      <span class="st-k">Catalogued</span>
+      <span class="st-v"><span data-count="{{ ops.pipeline.catalogued }}">{{ ops.pipeline.catalogued }}</span></span>
+      <span class="st-m">code + category</span>
+    </div>
+    <div class="strip-arrow"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L19 12l-6 5.5"/></svg></div>
+
+    <div class="strip-step">
+      <span class="st-k">Documented</span>
+      <span class="st-v"><span data-count="{{ ops.pipeline.described }}">{{ ops.pipeline.described }}</span></span>
+      <span class="st-m">{{ ops.ratios.described_pct }}% have notes</span>
+    </div>
+    <div class="strip-arrow"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L19 12l-6 5.5"/></svg></div>
+
+    <div class="strip-step">
+      <span class="st-k">Captured</span>
+      <span class="st-v"><span data-count="{{ ops.pipeline.captured }}">{{ ops.pipeline.captured }}</span></span>
+      <span class="st-m">{{ ops.ratios.photo_pct }}% photographed</span>
+    </div>
+    <div class="strip-arrow"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L19 12l-6 5.5"/></svg></div>
+
+    <div class="strip-step">
+      <span class="st-k">Active shelf</span>
+      <span class="st-v"><span data-live="active_goods">{{ ops.counts.active }}</span></span>
+      <span class="st-m">available records</span>
+    </div>
+    <div class="strip-arrow"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L19 12l-6 5.5"/></svg></div>
+
+    <div class="strip-step">
+      <span class="st-k">Archived</span>
+      <span class="st-v"><span data-live="archived_goods">{{ ops.counts.archived }}</span></span>
+      <span class="st-m">history retained</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TREND + STATUS ============ -->
+<section class="two-col" style="margin-bottom:18px">
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Registrations per month</h2>
+      <span class="hint">last 12 months · peak {{ peak }}</span>
+    </div>
+    <div id="trendChart" class="chart" style="margin-top:10px"></div>
+    <ul class="legend-inline">
+      <li><span class="sw" style="background:#6366f1"></span>New goods records</li>
+      <li><span class="sw" style="background:#22d3ee"></span>Monthly average</li>
+      <li>{{ ops.window.events }} audit events in the last {{ ops.window.days }} days</li>
+    </ul>
+  </div>
+
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Status split</h2>
+      <span class="hint">live</span>
+    </div>
+    <div id="statusDonut" class="chart" style="margin-top:6px"></div>
+    <hr class="hairline">
+    <div class="stat-inline"><span class="k">Active share</span><span class="v">{{ ops.ratios.active_pct }}%</span></div>
+    <div class="stat-inline"><span class="k">Archived share</span><span class="v">{{ ops.ratios.archived_pct }}%</span></div>
+    <div class="stat-inline"><span class="k">Retained after purge</span><span class="v">{{ ops.counts.deleted_retained }}</span></div>
+  </div>
+</section>
+
+<!-- ============ MIX + STREAM ============ -->
+<section class="grid grid-2" style="margin-bottom:18px">
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Category mix</h2>
+      <a class="hint" href="{{ url_for('categories_page') }}">manage →</a>
+    </div>
+    <div id="categoryBars" class="chart" style="margin-top:16px"></div>
+    {% if not dashboard.top_categories %}<p class="muted small">No categorised goods yet.</p>{% endif %}
+  </div>
+
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Live activity</h2>
+      <span class="hint">latest {{ ops.recent | length }}</span>
+    </div>
+    {% if ops.recent %}
+    <ul class="stream" style="margin-top:10px">
+      {% for event in ops.recent %}
+      <li>
+        <div class="s-body">
+          <div class="s-line">
+            <strong><a href="{{ url_for('goods_history_page', goods_id=event.entity_id) }}">{{ event.entity_label }}</a></strong>
+            <span class="s-act {{ event.action }}">{{ event.word }}</span>
+          </div>
         </div>
-    </div>
-
-    <div class="card">
-        <h2>Top categories</h2>
-        {% if dashboard["top_categories"] %}
-        {% set top = dashboard["top_categories"][0].goods_count %}
-        <ul class="bars">
-            {% for row in dashboard["top_categories"] %}
-            <li>
-                <div class="bar-row"><span>{{ row.name }}</span><span>{{ row.goods_count }}</span></div>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width: {{ (row.goods_count * 100 / top) | round(1) }}%"></div>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No goods in any category yet.</p>
-        {% endif %}
-    </div>
-</section>
-
-<section class="card">
-    <div
-        style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px">
-        <h2 style="margin:0">Recently registered goods</h2>
-        <a href="{{ url_for('goods_page') }}">View all goods →</a>
-    </div>
-
-    {% if dashboard["recent_goods"] %}
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Goods code</th>
-                    <th>Goods name</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Created (UTC)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in dashboard["recent_goods"] %}
-                <tr>
-                    <td><a href="{{ url_for('goods_history_page', goods_id=item['id']) }}">{{ item["code"] }}</a></td>
-                    <td>
-                        <div class="dashboard-goods">
-                            <a class="dashboard-photo" href="{{ url_for('goods_photo_page', goods_id=item.id) }}"
-                                aria-label="Manage photo for {{ item.name }}">
-                                {% if item.photo_filename %}
-                                <img src="{{ url_for('goods_thumb_file', filename=item.photo_filename) }}"
-                                    onerror="this.onerror=null;this.src='{{ url_for('goods_photo_file', filename=item.photo_filename) }}'"
-                                    alt="Photo of {{ item.name }}" loading="lazy">
-                                {% else %}<span>Add photo</span>{% endif %}
-                            </a>
-                            <span>{{ item.name }}</span>
-                        </div>
-                    </td>
-                    <td>{{ item["category_name"] }}</td>
-                    <td><span class="badge {{ item['status'] }}">{{ item["status"] | capitalize }}</span></td>
-                    <td>{{ item["created_at"] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p class="empty">No goods registered yet. Click Manage goods to begin.</p>
-    {% endif %}
-</section>
-
-<section class="card activity" style="margin-top:1rem">
-    <h2>Recent activity</h2>
-    {% if dashboard["recent_activity"] %}
-    <ul>
-        {% for event in dashboard["recent_activity"] %}
-        <li>
-            <a href="{{ url_for('goods_history_page', goods_id=event.entity_id) }}">{{ event.entity_label }}</a>
-            <span>{{ event.action | replace("_", " ") | capitalize }}</span>
-            <time>{{ event.created_at }} UTC</time>
-        </li>
-        {% endfor %}
+        <time>{{ event.created_at[5:16] }}</time>
+      </li>
+      {% endfor %}
     </ul>
     {% else %}
-    <p class="empty">No activity yet.</p>
+    <p class="muted small">No activity recorded yet.</p>
     {% endif %}
+    <hr class="hairline">
+    <p class="small muted" style="margin:0">Last event · {{ ops.latest_event }}</p>
+  </div>
 </section>
 
-<p class="note">
-    {% if dashboard["without_photo"] %}{{ dashboard["without_photo"] }} goods record(s) have no photo yet.{% endif %}
-    Counts represent registered goods types, not warehouse stock quantities.
+<!-- ============ ACTIVITY MATRIX ============ -->
+<section class="card pad" data-reveal style="margin-bottom:18px">
+  <div class="row-between">
+    <div>
+      <h2 class="card-title">Operations heat · {{ ops.window.days }} days</h2>
+      <p class="card-sub" style="margin:0">{{ ops.window.events }} events · busiest day {{ ops.window.busiest }}</p>
+    </div>
+    <div class="heat-scale">
+      <span>quiet</span>
+      <i style="background:color-mix(in srgb,var(--muted) 12%,transparent)"></i>
+      <i style="background:color-mix(in srgb,var(--accent) 26%,transparent)"></i>
+      <i style="background:color-mix(in srgb,var(--accent) 45%,transparent)"></i>
+      <i style="background:linear-gradient(160deg,#6366f1,#4f46e5)"></i>
+      <i style="background:linear-gradient(160deg,#22d3ee,#4f46e5)"></i>
+      <span>busy</span>
+    </div>
+  </div>
+
+  <div class="heat" style="margin-top:14px">
+    {% for row in ops.daily %}
+    {% set n = row.total %}
+    <div class="heat-cell {% if n == 0 %}l0{% elif n <= 2 %}l1{% elif n <= 5 %}l2{% elif n <= 9 %}l3{% else %}l4{% endif %}"
+         style="--i:{{ loop.index0 }}"
+         title="{{ row.day }} · {{ n }} events · {{ row.created }} new, {{ row.archived }} archived">
+      {{ n if n else '' }}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="heat-foot">
+    <span>{{ ops.daily[0].day }} → {{ ops.daily[-1].day }} (UTC)</span>
+    <span>{{ ops.actions.created }} registrations · {{ ops.actions.archived }} archives · {{ ops.actions.restored }} restores</span>
+  </div>
+</section>
+
+<!-- ============ CATEGORY ATLAS ============ -->
+{% if ops.categories %}
+<section style="margin-bottom:18px">
+  <div class="row-between" style="margin-bottom:12px">
+    <div>
+      <h2 class="card-title">Category atlas</h2>
+      <p class="card-sub" style="margin:0">Visual index of the goods groups in use.</p>
+    </div>
+    <a class="chip-btn" href="{{ url_for('categories_page') }}">All categories →</a>
+  </div>
+
+  {% set cat_peak = ops.categories | map(attribute='goods_count') | max %}
+  <div class="grid grid-4">
+    {% for category in ops.categories[:4] %}
+    <a class="cat-card" href="{{ url_for('goods_page', q=category.name) }}" data-reveal>
+      <div class="cat-media">
+        <img src="{{ cat_image(category.name) }}" alt="{{ category.name }} goods" loading="lazy">
+        <span class="cat-count">{{ category.goods_count }}<span>items</span></span>
+      </div>
+      <div class="cat-body">
+        <span class="cat-title">{{ category.name }}</span>
+        <div class="cat-meter"><i style="width:{{ (category.goods_count * 100 / cat_peak) | round(0) if cat_peak else 0 }}%"></i></div>
+        <span class="small muted">{{ category.archived_count }} archived · {{ category.goods_count - category.archived_count }} active</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ============ RECENT GOODS ============ -->
+<section class="card" data-reveal>
+  <div class="card-head">
+    <h2>Recently registered</h2>
+    <span class="hint">newest first</span>
+    <a class="chip-btn" href="{{ url_for('goods_page') }}" style="margin-left:auto">Open registry →</a>
+  </div>
+
+  {% if dashboard.recent_goods %}
+  <div class="card-body" style="padding-top:14px">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Code</th>
+            <th>Category</th>
+            <th>Weight</th>
+            <th>Status</th>
+            <th>Created (UTC)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in dashboard.recent_goods %}
+          <tr>
+            <td>
+              <div class="cell-goods">
+                {{ thumb(item) }}
+                <div>
+                  <div class="c-name">{{ item.name }}</div>
+                  <div class="c-meta">{{ item.unit }} unit</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="code-chip">{{ item.code }}</span></td>
+            <td>{{ item.category_name }}</td>
+            <td class="mono">{{ item.weight }} kg</td>
+            <td>{{ status_badge(item.status) }}</td>
+            <td class="mono muted small">{{ item.created_at[:16] }}</td>
+            <td style="text-align:right">
+              <a class="chip-btn" href="{{ url_for('goods_history_page', goods_id=item.id) }}">History</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-xl">
+    <img src="{{ url_for('static', filename='img/empty-box.jpg') }}" alt="">
+    <h2>The registry is empty</h2>
+    <p>Create a category, then register your first goods record or import a CSV batch.</p>
+    <div class="page-actions" style="justify-content:center">
+      <a class="btn" href="{{ url_for('categories_page') }}">Create a category</a>
+      <a class="btn ghost" href="{{ url_for('import_goods_page') }}">Import CSV</a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<p class="note" style="margin-top:18px">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+  <span>Counts represent <strong>registered goods types</strong>, not warehouse stock quantities. Stock, allocation and shipment tracking sit outside this module.</span>
 </p>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" data-chart="area" data-target="#trendChart">
+{"labels": {{ trend | map(attribute='label') | list | tojson }},
+ "values": {{ trend | map(attribute='count') | list | tojson }},
+ "unit": "records", "aria": "Goods registered per month"}
+</script>
+
+<script type="application/json" data-chart="donut" data-target="#statusDonut">
+{"segments": [
+   {"label": "Active", "value": {{ dashboard.active_goods }}, "color": "#10b981"},
+   {"label": "Archived", "value": {{ dashboard.archived_goods }}, "color": "#f59e0b"}
+ ],
+ "centerValue": {{ dashboard.total_goods }}, "centerLabel": "records",
+ "aria": "Active versus archived goods"}
+</script>
+
+<script type="application/json" data-chart="bars" data-target="#categoryBars">
+{"rows": [
+   {% for row in dashboard.top_categories %}
+   {"label": {{ row.name | tojson }}, "value": {{ row.goods_count }}}{% if not loop.last %},{% endif %}
+   {% endfor %}
+ ], "total": {{ dashboard.total_goods }}}
+</script>
+
+<script type="application/json" data-chart="spark" data-target="#sparkTotal">
+{"values": {{ trend | map(attribute='count') | list | tojson }}, "color": "#6366f1"}
+</script>
+<script type="application/json" data-chart="spark" data-target="#sparkActive">
+{"values": {{ trend | map(attribute='count') | list | tojson }}, "color": "#10b981"}
+</script>
+<script type="application/json" data-chart="spark" data-target="#sparkArchived">
+{"values": {{ ops.daily | map(attribute='archived') | list | tojson }}, "color": "#f59e0b"}
+</script>
+<script type="application/json" data-chart="spark" data-target="#sparkPhoto">
+{"values": {{ ops.daily | map(attribute='created') | list | tojson }}, "color": "#22d3ee"}
+</script>
 {% endblock %}

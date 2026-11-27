@@ -1,115 +1,98 @@
 {% extends "_layout.html" %}
-{% block title %}Change history{% endblock %}
-{% block heading %}Change history{% endblock %}
-
-{% block head %}
-<style>
-    .event {
-        margin-top: 16px;
-    }
-
-    .event-heading {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-
-    .event-heading h2 {
-        margin: 0;
-        font-size: 1rem;
-    }
-
-    .action {
-        display: inline-block;
-        padding: .25rem .7rem;
-        border-radius: 20px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-weight: 600;
-        font-size: .8rem;
-    }
-
-    .action.created,
-    .action.restored {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .action.archived {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    :root[data-theme="dark"] .action.created,
-    :root[data-theme="dark"] .action.restored {
-        background: #064e3b;
-        color: #a7f3d0;
-    }
-
-    .timestamp {
-        color: var(--muted);
-        font-size: .8rem;
-    }
-
-    td {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
-</style>
-{% endblock %}
+{% from "_macros.html" import action_badge, status_badge %}
+{% block title %}{{ item.code }} history{% endblock %}
+{% block heading %}{{ item.code }}{% endblock %}
+{% block crumb %}Catalogue · audit trail{% endblock %}
 
 {% block content %}
-{% macro display_value(value) -%}
-{%- if value is none -%}—{%- elif value == "" -%}(empty){%- else -%}{{ value }}{%- endif -%}
-{%- endmacro %}
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Audit trail</span>
+    <h2 class="page-title">{{ item.name }}</h2>
+    <p class="lede">Every action performed on <span class="code-chip">{{ item.code }}</span> — including values that were
+      replaced — is kept here permanently, even after a purge.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn ghost" href="{{ url_for('goods_page') }}">Back to registry</a>
+    {% if not is_deleted %}
+    <a class="btn ghost" href="{{ url_for('edit_goods_page', goods_id=item.id) }}">Edit</a>
+    <a class="btn" href="{{ url_for('goods_photo_page', goods_id=item.id) }}">Photo</a>
+    {% endif %}
+  </div>
+</div>
 
 {% if is_deleted %}
-<a href="{{ url_for('deleted_goods_page') }}">← Back to deleted goods</a>
-<p role="status"><strong>This goods record has been permanently deleted.</strong> Its change history is retained.</p>
-{% else %}
-<a href="{{ url_for('goods_page') }}">← Back to goods</a>
+<div class="note bad" style="margin-bottom:18px">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+  <span>Record #{{ item.id }} has been permanently deleted. The goods row is gone; this history remains as the
+    compliance record and cannot be edited.</span>
+</div>
 {% endif %}
 
-<p class="sub">
-    <strong>{{ item["code"] }} · {{ item["name"] }}</strong><br>
-    {{ history | length }} recorded events · Newest first. All times UTC.
-</p>
-
-{% for entry in history %}
-<section class="card event">
-    <div class="event-heading">
-        <h2><span class="action {{ entry['action'] }}">{{ entry["action"] | capitalize }}</span></h2>
-        <span class="timestamp">{{ entry["created_at"] }} UTC · Event #{{ entry["id"] }}</span>
-    </div>
-
-    {% if entry["changes"] %}
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Field</th>
-                    <th>Before</th>
-                    <th>After</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for change in entry["changes"] %}
-                <tr>
-                    <td>{{ change["label"] }}</td>
-                    <td>{{ display_value(change["before"]) }}</td>
-                    <td>{{ display_value(change["after"]) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty">Saved without changes to the listed fields.</div>
-    {% endif %}
+<section class="grid grid-3" style="margin-bottom:18px">
+  <div class="kpi-mini" data-reveal>
+    <span class="k">Audit events</span>
+    <span class="v" data-count="{{ history | length }}">{{ history | length }}</span>
+  </div>
+  <div class="kpi-mini" data-reveal>
+    <span class="k">Record id</span>
+    <span class="v">#{{ item.id }}</span>
+  </div>
+  <div class="kpi-mini" data-reveal>
+    <span class="k">Latest event</span>
+    <span class="v small" style="font-family:var(--mono)">{{ history[0].created_at if history else '—' }}</span>
+  </div>
 </section>
-{% else %}
-<div class="card empty">No history recorded for this item.</div>
-{% endfor %}
+
+<section class="card pad" data-reveal>
+  <div class="card-head" style="padding:0">
+    <h2>Event timeline</h2>
+    <span class="hint">{{ history | length }} entries · newest first</span>
+  </div>
+
+  {% if history %}
+  <div class="timeline" style="margin-top:18px">
+    {% for event in history %}
+    <article class="t-item card pad" style="margin:0">
+      <div class="row-between" style="gap:12px; align-items:flex-start">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+          {{ action_badge(event.action) }}
+          <span class="small muted">Event #{{ event.id }} · {{ event.entity_label }}</span>
+        </div>
+        <time class="mono small muted">{{ event.created_at }}</time>
+      </div>
+
+      {% if event.changes %}
+      <div class="table-wrap" style="margin-top:12px">
+        <table class="changes">
+          <thead>
+            <tr><th>Field</th><th>Before</th><th>After</th></tr>
+          </thead>
+          <tbody>
+            {% for change in event.changes %}
+            <tr>
+              <td class="small"><b>{{ change.label }}</b></td>
+              <td class="mono small muted">{{ change.before if change.before not in (None, '') else '—' }}</td>
+              <td class="mono small">{{ change.after if change.after not in (None, '') else '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="small muted" style="margin-top:10px; margin-bottom:0">No field values were changed by this event.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-xl" style="margin-top:16px">
+    <img src="{{ url_for('static', filename='img/empty-box.jpg') }}" alt="">
+    <h2>No audit events</h2>
+    <p>This record has not been modified since it was created.</p>
+  </div>
+  {% endif %}
+</section>
+
 {% endblock %}

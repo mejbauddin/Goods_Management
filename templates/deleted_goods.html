@@ -1,48 +1,79 @@
 {% extends "_layout.html" %}
 {% block title %}Deleted goods{% endblock %}
-{% block heading %}Deleted goods history{% endblock %}
+{% block heading %}Deleted goods{% endblock %}
+{% block crumb %}Catalogue · purged{% endblock %}
 
 {% block content %}
-<p class="sub">
-    {{ deleted_goods | length }} deleted record{% if deleted_goods | length != 1 %}s{% endif %} · Most recently deleted
-    first.
-</p>
-<div class="card" style="background:#fffbeb; border-color:#fde68a; color:#92400e; margin-bottom:16px">
-    These goods were permanently deleted and cannot be restored. Their saved history remains available for review.
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Retained records</span>
+    <h2 class="page-title">Permanently deleted goods</h2>
+    <p class="lede">These records were archived first, then purged. The goods row and its photo are gone; the audit
+      history is kept forever.</p>
+  </div>
+  <div class="page-actions">
+    <span class="count-pill"><b>{{ deleted_goods | length }}</b> purged</span>
+    <a class="btn ghost" href="{{ url_for('goods_page', status='archived') }}">Archived instead</a>
+  </div>
 </div>
 
-<section class="card">
-    {% if deleted_goods %}
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Record ID</th>
-                    <th>Goods code</th>
-                    <th>Goods name</th>
-                    <th>Deleted at (UTC)</th>
-                    <th>History</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in deleted_goods %}
-                <tr>
-                    <td>{{ item["id"] }}</td>
-                    <td>{{ item["code"] }}</td>
-                    <td>{{ item["name"] }}</td>
-                    <td>{{ item["deleted_at"] }}</td>
-                    <td>
-                        <a class="edit-link"
-                            style="display:inline-block;padding:.35rem .7rem;border:1px solid var(--border);border-radius:7px;color:var(--accent);text-decoration:none;font-weight:600"
-                            href="{{ url_for('goods_history_page', goods_id=item['id']) }}">View history</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<section class="card" data-reveal>
+  <div class="card-head">
+    <h2>Purge log</h2>
+    <span class="hint">most recent first</span>
+  </div>
+
+  {% if deleted_goods %}
+  <div class="card-body" style="padding-top:12px">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Goods</th>
+            <th>Deleted at</th>
+            <th style="text-align:right">Audit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in deleted_goods %}
+          <tr>
+            <td>
+              <div class="cell-goods">
+                <span class="thumb-fallback">
+                  <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
+                </span>
+                <div>
+                  <div class="c-name">{{ item.name }}</div>
+                  <div class="c-meta"><span class="code-chip">{{ item.code }}</span> · #{{ item.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="mono small muted">{{ item.deleted_at }}</td>
+            <td style="text-align:right">
+              <a class="chip-btn" href="{{ url_for('goods_history_page', goods_id=item.id) }}">View history</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    {% else %}
-    <div class="empty">No permanently deleted goods records.</div>
-    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-xl">
+    <img src="{{ url_for('static', filename='img/empty-box.jpg') }}" alt="">
+    <h2>Nothing has been purged</h2>
+    <p>Archived goods stay restorable until someone deliberately deletes them. This log will fill up when that
+      happens.</p>
+    <a class="btn ghost" href="{{ url_for('goods_page') }}">Back to registry</a>
+  </div>
+  {% endif %}
 </section>
+
+<p class="note">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+  <span>Design rule: a record must be <b>archived</b> before it can be deleted, and deletion still asks for an explicit
+    confirmation tick. That two-step guard is what keeps the audit trail meaningful.</span>
+</p>
+
 {% endblock %}

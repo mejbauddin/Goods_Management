@@ -1,16 +1,20 @@
-"""GoodsHub - goods registry web application.
+"""GoodsHub - Goods Management System (transit warehouse registry).
 
-Improvements over the original version:
-  * CSRF protection is centralised (one before_request hook, no copy-paste).
+Version 2 rebuild notes:
+  * A complete design system (static/css/app.css) and motion layer
+    (static/js/charts.js, static/js/app.js) drive the interface.
+  * New /flow operations console with live lifecycle, pipeline and audit
+    flow diagrams; /api/live and /api/ops expose the same metrics as JSON.
+  * Dashboard, analytics, catalogue, categories, history, import, photo
+    and settings pages were rebuilt on the new system without changing a
+    single repository contract, so the data and rules stay identical.
+
+Everything below is the original, hardened Flask layer:
+  * CSRF protection is centralised (one before_request hook).
   * Shared helpers for form parsing and the status filter.
-  * New /analytics page with charts (status, categories, units, monthly).
-  * New /settings page (theme, app name, default filter, chart range),
-    stored in DATA_DIR/settings.json and injected into every template.
+  * /analytics page with charts (status, categories, units, monthly).
+  * /settings page (theme, app name, default filter, chart range).
   * Security headers, upload size limit, friendly error pages.
-  * One place validates settings (validate_settings), and the "default
-    status filter" setting is now actually used by the list/export pages.
-  * Photo filename checks come from photo_storage, so the app and the
-    upload code share exactly one rule.
 """
 
 import csv
@@ -28,6 +32,7 @@ from flask import (
     abort,
     flash,
     g,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -50,6 +55,7 @@ from category_repository import (
 from csv_import_service import import_goods_csv, sample_csv
 from dashboard_repository import get_dashboard_data, last_months
 from database import DATA_DIR, backup_database, initialize_database
+from flow_repository import ACTION_WORDS, get_live_metrics, get_ops_snapshot
 from goods_repository import (
     ALLOWED_UNITS,
     STATUS_FILTERS,
@@ -96,6 +102,9 @@ app.config.update(
 GOODS_FORM_FIELDS = (
     "code", "name", "category_id", "unit", "weight", "description"
 )
+
+APP_VERSION = "2.0.0"
+ASSET_VERSION = "2026.11.27"
 
 # --------------------------------------------------------------------------
 # Settings (stored as JSON next to the database)
@@ -232,6 +241,9 @@ def inject_globals():
     return {
         "csrf_token": get_csrf_token(),
         "settings": current_settings(),
+        "app_version": APP_VERSION,
+        "asset_version": ASSET_VERSION,
+        "action_words": ACTION_WORDS,
     }
 
 
@@ -364,9 +376,52 @@ def goods_arguments(form_data):
 # Dashboard and analytics
 # --------------------------------------------------------------------------
 
+def _trend_rows(monthly):
+    """Label the monthly counts for the dashboard trend chart."""
+    rows = []
+
+    for row in monthly:
+        moment = datetime.strptime(row["month"], "%Y-%m")
+        rows.append({
+            "label": moment.strftime("%b"),
+            "full": moment.strftime("%B %Y"),
+            "count": row["count"],
+        })
+
+    return rows
+
+
 @app.get("/")
 def home():
-    return render_template("dashboard.html", dashboard=get_dashboard_data())
+    dashboard = get_dashboard_data(recent_limit=6, months=12)
+    ops = get_ops_snapshot(days=14)
+    trend = _trend_rows(dashboard["monthly"])
+    peak = max((row["count"] for row in trend), default=0)
+
+    return render_template(
+        "dashboard.html",
+        dashboard=dashboard,
+        ops=ops,
+        trend=trend,
+        peak=peak,
+    )
+
+
+@app.get("/flow")
+def flow_page():
+    ops = get_ops_snapshot(days=14)
+
+    return render_template("flow.html", ops=ops)
+
+
+@app.get("/api/live")
+def live_metrics():
+    return jsonify(get_live_metrics())
+
+
+@app.get("/api/ops")
+def ops_metrics():
+    return jsonify(get_ops_snapshot(days=14))
 
 
 def _share(counter, limit=None):
@@ -456,6 +511,7 @@ def analytics_page():
     return render_template(
         "analytics.html",
         stats=build_analytics(goods, settings["chart_months"]),
+        ops=get_ops_snapshot(days=14),
     )
 
 
@@ -494,12 +550,20 @@ def settings_page():
             flash("Settings saved.", "success")
             return redirect(url_for("settings_page"))
 
+    backup_dir = DATA_DIR / "backups"
+    backups = (
+        sorted(backup_dir.glob("goodshub_*.sqlite3"), key=lambda p: p.name)[-4:][::-1]
+        if backup_dir.exists()
+        else []
+    )
+
     return render_template(
         "settings.html",
         form=form,
         themes=THEMES,
         status_filters=STATUS_FILTERS,
         month_choices=CHART_MONTH_CHOICES,
+        backups=backups,
     )
 
 
@@ -532,7 +596,7 @@ def categories_page():
 
     return render_template(
         "categories.html",
-        categories=get_all_categories(),
+        categories=get_all_categories(with_counts=True),
         category_name=category_name,
     )
 

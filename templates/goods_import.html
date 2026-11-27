@@ -1,105 +1,131 @@
 {% extends "_layout.html" %}
 {% block title %}Import goods{% endblock %}
-{% block heading %}Import goods from CSV{% endblock %}
-
-{% block head %}
-<style>
-    pre {
-        overflow-x: auto;
-        padding: 16px;
-        background: var(--bg);
-        border-radius: 8px;
-    }
-
-    .card {
-        margin-top: 18px;
-    }
-
-    .success {
-        color: var(--good);
-    }
-
-    .failed {
-        color: var(--bad);
-    }
-
-    .message {
-        padding: 14px;
-        margin: 14px 0;
-        border-radius: 8px;
-    }
-
-    .message.error {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .message.success {
-        background: #dcfce7;
-        color: #166534;
-    }
-</style>
-{% endblock %}
+{% block heading %}Import goods{% endblock %}
+{% block crumb %}Data exchange · import{% endblock %}
 
 {% block content %}
-<p class="sub">Create new goods from a CSV file. Valid rows are saved, invalid rows are reported below. Existing goods
-    are not overwritten.</p>
 
-<section class="card">
-    <ul>
-        <li>Use the exact column headings and order shown below.</li>
-        <li>Category names must already exist in {{ settings.app_name }}.</li>
-        <li>Units: Piece, Box, Pack, Bag, Bottle, Set, or Roll.</li>
-        <li>New goods are created with Active status.</li>
-        <li>Maximum: 500 goods and a 2 MB UTF-8 CSV file.</li>
-    </ul>
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Bulk intake</span>
+    <h2 class="page-title">Import a CSV batch</h2>
+    <p class="lede">Each row is validated and written in its own transaction. A failed row never rolls back the rows
+      that already succeeded.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn ghost" href="{{ url_for('import_template') }}">Download template</a>
+    <a class="btn ghost" href="{{ url_for('goods_page') }}">Back to registry</a>
+  </div>
+</div>
 
-    <p><strong>Example file:</strong></p>
-    <pre>code,name,category,unit,weight,description
-IMP-001,USB cable,Electronics,Piece,0.05,One metre cable
-IMP-002,Notebook,Office Supplies,Piece,0.20,A5 notebook</pre>
+<div class="two-col">
 
-    <p class="help">Add photos separately after importing.</p>
-
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('import_goods_page') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="csv_file">Select CSV file</label>
-        <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
-        <button class="btn" type="submit">Import goods</button>
-    </form>
-</section>
-
-{% if result is not none %}
-<section class="card">
-    <h2>Import results</h2>
-    <p role="status">
-        <strong class="success">{{ result.imported }} imported</strong> ·
-        <strong class="failed">{{ result.failed }} failed</strong>
-    </p>
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>CSV line</th>
-                    <th>Goods code</th>
-                    <th>Result</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in result.rows %}
-                <tr>
-                    <td>{{ row.line }}</td>
-                    <td>{{ row.code }}</td>
-                    <td class="{{ 'success' if row.success else 'failed' }}">{{ 'Imported' if row.success else 'Failed'
-                        }}</td>
-                    <td>{{ row.message }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <section class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Upload</h2>
+      <span class="hint">.csv · UTF-8</span>
     </div>
-    <p><a href="{{ url_for('goods_page') }}">View goods →</a></p>
+
+    <form method="POST" action="{{ url_for('import_goods_page') }}" enctype="multipart/form-data" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <label class="dropzone" data-dropzone for="csv-file">
+        <span class="dz-ico">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M7.5 8.5L12 4l4.5 4.5M4 15v3.5h16V15"/></svg>
+        </span>
+        <span class="dz-title">Drop the CSV here or browse</span>
+        <span class="dz-sub">One file, up to the configured upload limit</span>
+        <input id="csv-file" type="file" name="csv_file" accept=".csv,text/csv" required>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn" type="submit">Validate &amp; import</button>
+        <a class="link" href="{{ url_for('goods_page') }}">Cancel</a>
+      </div>
+    </form>
+
+    <hr class="hairline">
+
+    <div class="card-head" style="padding:0">
+      <h3 style="font-size:15px">Header contract</h3>
+      <span class="hint">exact order not required</span>
+    </div>
+    <pre class="code-block">code,name,category,unit,weight,description</pre>
+    <ul class="rules">
+      <li><b>code</b> — unique, 2–30 characters, stored upper-case.</li>
+      <li><b>category</b> — must match an existing category name.</li>
+      <li><b>unit</b> — must be one of the allowed units.</li>
+      <li><b>weight</b> — number greater than 0.</li>
+      <li>Rows with an existing code are skipped, not overwritten.</li>
+    </ul>
+  </section>
+
+  <section class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>How the batch runs</h2>
+      <span class="hint">per row</span>
+    </div>
+    <ol class="strip-step" style="margin-top:14px">
+      <li><span class="num">01</span><div><b>Decode</b><p>Read as UTF-8-sig, then check the header against the contract.</p></div></li>
+      <li><span class="num">02</span><div><b>Validate</b><p>Normalise the code, resolve the category, parse the weight and unit.</p></div></li>
+      <li><span class="num">03</span><div><b>Write</b><p>Insert the goods row and its audit entry inside one transaction.</p></div></li>
+      <li><span class="num">04</span><div><b>Report</b><p>Collect imported / skipped / failed counts with the reason per line.</p></div></li>
+    </ol>
+
+    <div class="note" style="margin-top:16px">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+      <span>Importing is additive. Nothing is deleted, and every inserted record is auditable like a manual
+        registration.</span>
+    </div>
+  </section>
+</div>
+
+{% if result %}
+<section class="card pad" data-reveal style="margin-top:18px">
+  <div class="card-head" style="padding:0">
+    <h2>Import result</h2>
+    <span class="hint">{{ result.rows | length }} data rows read</span>
+  </div>
+
+  <div class="result-strip" style="margin-top:14px">
+    <div class="rs-cell good">
+      <span class="rs-k">Imported</span>
+      <span class="rs-v" data-count="{{ result.imported }}">{{ result.imported }}</span>
+    </div>
+    <div class="rs-cell skip">
+      <span class="rs-k">Skipped</span>
+      <span class="rs-v" data-count="{{ result.skipped }}">{{ result.skipped }}</span>
+    </div>
+    <div class="rs-cell bad">
+      <span class="rs-k">Failed</span>
+      <span class="rs-v" data-count="{{ result.failed }}">{{ result.failed }}</span>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:16px">
+    <table>
+      <thead>
+        <tr><th style="width:70px">Line</th><th>Code</th><th>Outcome</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        {% for row in result.rows %}
+        <tr>
+          <td class="mono small muted">{{ row.line }}</td>
+          <td class="mono small">{{ row.code or '—' }}</td>
+          <td>
+            {% if row.success %}
+            <span class="badge good"><span class="dot"></span>Imported</span>
+            {% else %}
+            <span class="badge bad"><span class="dot"></span>Rejected</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ row.message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endif %}
+
 {% endblock %}

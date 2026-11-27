@@ -1,0 +1,544 @@
+{% extends "_layout.html" %}
+{% block title %}Operations flow{% endblock %}
+{% block heading %}Operations flow{% endblock %}
+{% block crumb %}Control room · live diagrams{% endblock %}
+
+{% block head %}
+<style>
+  .flow-card .flow-wrap { padding: 2px 18px 14px; }
+  .flow-card .flow-svg { min-width: 960px; }
+  .diagram-note { padding: 0 22px 18px; margin: 0; }
+  .scope-key { display: flex; gap: 16px; flex-wrap: wrap; font-size: .74rem; color: var(--muted); padding: 2px 22px 8px; }
+  .scope-key span { display: inline-flex; align-items: center; gap: 7px; }
+  .sw-box { width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--line-strong); }
+  .sw-box.in { background: color-mix(in srgb, var(--accent) 35%, transparent); border-color: var(--accent); }
+  .sw-box.out { border-style: dashed; border-color: var(--muted); }
+  .breathe { animation: breathe 3.4s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { opacity: .22; transform: scale(1); } 50% { opacity: .48; transform: scale(1.06); } }
+  .flow-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .fm { padding: 13px 15px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-2); }
+  .fm .k { font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .fm .v { font-size: 1.35rem; font-weight: 800; letter-spacing: -.035em; margin-top: 2px; }
+  .fm .m { font-size: .72rem; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ============ BANNER ============ -->
+<section class="banner" data-reveal>
+  <img src="{{ url_for('static', filename='img/flow-network.jpg') }}"
+       alt="Glowing supply-chain network of connected nodes with cargo moving along luminous paths" fetchpriority="high">
+  <div class="banner-veil"></div>
+  <div class="banner-copy">
+    <span class="eyebrow">Operations console</span>
+    <h2>Live flow of every goods record</h2>
+    <p>Lifecycle, intake pipeline and audit write path — drawn from the same SQLite snapshot that serves the catalogue.</p>
+  </div>
+  <div class="banner-badges">
+    <span class="glass-tag"><b>{{ ops.counts.goods_total }}</b> records</span>
+    <span class="glass-tag"><b>{{ ops.counts.events_total }}</b> events</span>
+    <span class="glass-tag"><b>{{ ops.counts.events_24h }}</b> in 24 h</span>
+  </div>
+</section>
+
+<!-- ============ METRICS ============ -->
+<section class="card pad" data-reveal style="margin-bottom:18px">
+  <div class="flow-metrics">
+    <div class="fm">
+      <div class="k">14-day throughput</div>
+      <div class="v"><span data-count="{{ ops.window.events }}">{{ ops.window.events }}</span></div>
+      <div class="m">audit events · busiest {{ ops.window.busiest }}</div>
+    </div>
+    <div class="fm">
+      <div class="k">Events · 24 h</div>
+      <div class="v"><span data-live="events_24h">{{ ops.counts.events_24h }}</span></div>
+      <div class="m">all goods mutations</div>
+    </div>
+    <div class="fm">
+      <div class="k">Active records</div>
+      <div class="v"><span class="grad-text" data-live="active_goods">{{ ops.counts.active }}</span></div>
+      <div class="m">{{ ops.ratios.active_pct }}% of registry</div>
+    </div>
+    <div class="fm">
+      <div class="k">Archived</div>
+      <div class="v"><span data-live="archived_goods">{{ ops.counts.archived }}</span></div>
+      <div class="m">restorable at any time</div>
+    </div>
+    <div class="fm">
+      <div class="k">Retained history</div>
+      <div class="v">{{ ops.counts.deleted_retained }}</div>
+      <div class="m">purged records still auditable</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIFECYCLE ============ -->
+<section class="card flow-card" data-reveal>
+  <div class="card-head">
+    <h2>Goods lifecycle</h2>
+    <span class="hint">state machine · live counts</span>
+    <button class="chip-btn" type="button" data-flow-toggle=".flow-svg" aria-pressed="false" style="margin-left:auto">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M9 6v12M15 6v12"/></svg>
+      <span data-flow-label>Pause flow</span>
+    </button>
+  </div>
+
+  <div class="scope-key">
+    <span><i class="sw-box in"></i> operational state</span>
+    <span><i class="sw-box out"></i> terminal / retained state</span>
+    <span>dashed path = reversible or non-destructive transition</span>
+  </div>
+
+  <div class="flow-wrap">
+    <svg class="flow-svg" viewBox="0 0 1180 430" role="img"
+         aria-label="Lifecycle: registered goods become active, may be archived and restored, then purged while history is retained">
+      <defs>
+        <linearGradient id="lcA" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
+        </linearGradient>
+        <linearGradient id="lcB" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#10b981"/>
+        </linearGradient>
+        <linearGradient id="lcC" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/>
+        </linearGradient>
+        <linearGradient id="lcD" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fb7185"/><stop offset="100%" stop-color="#dc2626"/>
+        </linearGradient>
+        <linearGradient id="lcE" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0ea5e9"/>
+        </linearGradient>
+        <radialGradient id="lcHalo">
+          <stop offset="0%" stop-color="#34d399" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+        </radialGradient>
+
+        <path id="lcPathNew" d="M220 204 C 262 204, 300 108, 356 108"/>
+        <path id="lcPathArchive" d="M454 172 L 454 266"/>
+        <path id="lcPathRestore" d="M500 266 C 556 240, 556 198, 500 172"/>
+        <path id="lcPathPurge" d="M552 330 L 706 330"/>
+        <path id="lcPathRetain" d="M902 330 L 978 330"/>
+      </defs>
+
+      <!-- connectors -->
+      <path class="f-link dash" d="M220 204 C 262 204, 300 108, 356 108"/>
+      <path class="f-link dash" d="M454 172 L 454 266"/>
+      <path class="f-link return dash" d="M500 266 C 556 240, 556 198, 500 172"/>
+      <path class="f-link dash" d="M552 330 L 706 330"/>
+      <path class="f-link dash" d="M902 330 L 978 330" style="stroke: color-mix(in srgb, var(--accent-2) 60%, transparent)"/>
+
+      <!-- arrow heads -->
+      <g fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+        <path d="M348 102 L 356 108 L 348 114"/>
+        <path d="M448 258 L 454 266 L 460 258"/>
+        <path d="M698 324 L 706 330 L 698 336"/>
+        <path d="M970 324 L 978 330 L 970 336"/>
+      </g>
+      <g fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round">
+        <path d="M492 178 L 500 172 L 493 166"/>
+      </g>
+
+      <!-- micro labels -->
+      <text class="f-label" x="236" y="140">new record</text>
+      <text class="f-label" x="462" y="222">archive</text>
+      <text class="f-label" x="566" y="222" style="fill:var(--warn)">restore</text>
+      <text class="f-label" x="612" y="316">purge</text>
+      <text class="f-label" x="918" y="316" style="fill:var(--accent-2)">retain</text>
+
+      <!-- particles -->
+      <g class="f-particle" style="fill:#818cf8">
+        <circle r="4"><animateMotion dur="3.6s" repeatCount="indefinite"><mpath href="#lcPathNew"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion dur="3.6s" begin="1.2s" repeatCount="indefinite"><mpath href="#lcPathNew"/></animateMotion></circle>
+      </g>
+      <g class="f-particle" style="fill:#22d3ee">
+        <circle r="3"><animateMotion dur="4.2s" repeatCount="indefinite"><mpath href="#lcPathNew"/></animateMotion></circle>
+      </g>
+      <g class="f-particle" style="fill:#fbbf24">
+        <circle r="4"><animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#lcPathArchive"/></animateMotion></circle>
+      </g>
+      <g class="f-particle" style="fill:#fb7185">
+        <circle r="4"><animateMotion dur="4s" repeatCount="indefinite"><mpath href="#lcPathPurge"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion dur="4s" begin="1.4s" repeatCount="indefinite"><mpath href="#lcPathPurge"/></animateMotion></circle>
+      </g>
+      <g class="f-particle" style="fill:#67e8f9">
+        <circle r="3"><animateMotion dur="3s" repeatCount="indefinite"><mpath href="#lcPathRetain"/></animateMotion></circle>
+      </g>
+
+      <!-- registered -->
+      <g>
+        <rect class="f-node" x="24" y="150" width="196" height="128" rx="18"/>
+        <rect x="24" y="150" width="196" height="4" rx="2" fill="url(#lcA)"/>
+        <text class="f-label" x="44" y="182">Registered</text>
+        <text class="f-count" x="44" y="226">{{ ops.lifecycle.registered }}</text>
+        <text class="f-sub" x="44" y="250">records created</text>
+      </g>
+
+      <!-- active -->
+      <g>
+        <circle cx="454" cy="108" r="128" fill="url(#lcHalo)" class="breathe" style="transform-origin:454px 108px"/>
+        <rect class="f-node active" x="356" y="44" width="196" height="128" rx="18" stroke-width="1.8"/>
+        <rect x="356" y="44" width="196" height="4" rx="2" fill="url(#lcB)"/>
+        <text class="f-label" x="376" y="76">Active</text>
+        <text class="f-count" x="376" y="120">{{ ops.counts.active }}</text>
+        <text class="f-sub" x="376" y="144">available · editable</text>
+        <g>
+          <rect x="472" y="62" width="62" height="19" rx="9.5" fill="color-mix(in srgb, var(--good) 18%, transparent)"/>
+          <text x="503" y="75.5" text-anchor="middle" font-size="9.5" letter-spacing="1.4" fill="var(--good)" font-weight="700">LIVE</text>
+        </g>
+      </g>
+
+      <!-- archived -->
+      <g>
+        <rect class="f-node archived" x="356" y="266" width="196" height="128" rx="18"/>
+        <rect x="356" y="266" width="196" height="4" rx="2" fill="url(#lcC)"/>
+        <text class="f-label" x="376" y="298">Archived</text>
+        <text class="f-count" x="376" y="342">{{ ops.counts.archived }}</text>
+        <text class="f-sub" x="376" y="366">hidden · restorable</text>
+      </g>
+
+      <!-- purged -->
+      <g>
+        <rect class="f-node deleted" x="706" y="266" width="196" height="128" rx="18"/>
+        <rect x="706" y="266" width="196" height="4" rx="2" fill="url(#lcD)"/>
+        <text class="f-label" x="726" y="298">Purged</text>
+        <text class="f-count" x="726" y="342">{{ ops.lifecycle.purged }}</text>
+        <text class="f-sub" x="726" y="366">catalogue row removed</text>
+      </g>
+
+      <!-- retained -->
+      <g>
+        <rect class="f-node" x="978" y="266" width="178" height="128" rx="18" style="stroke: color-mix(in srgb, var(--accent-2) 45%, var(--line))"/>
+        <rect x="978" y="266" width="178" height="4" rx="2" fill="url(#lcE)"/>
+        <text class="f-label" x="998" y="298">Retained</text>
+        <text class="f-count" x="998" y="342">{{ ops.counts.deleted_retained }}</text>
+        <text class="f-sub" x="998" y="366">audit history kept</text>
+      </g>
+    </svg>
+  </div>
+
+  <p class="diagram-note small muted">
+    A record must be archived before it can be purged. Purging removes the catalogue row but keeps every audit snapshot,
+    so the history page and export remain complete.
+  </p>
+</section>
+
+<!-- ============ PIPELINE ============ -->
+<section class="card flow-card" data-reveal style="margin-top:18px">
+  <div class="card-head">
+    <h2>Intake pipeline</h2>
+    <span class="hint">receiving → registration → enrichment → storage</span>
+  </div>
+  <div class="scope-key">
+    <span><i class="sw-box in"></i> implemented in this module</span>
+    <span><i class="sw-box out"></i> handled by adjacent warehouse modules</span>
+  </div>
+
+  <div class="flow-wrap">
+    <svg class="flow-svg" viewBox="0 0 1180 300" role="img"
+         aria-label="Pipeline from inbound receiving to dispatch, with registration and enrichment stages in scope">
+      <defs>
+        <linearGradient id="plA" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient>
+        <path id="plConveyor" d="M26 232 L 1154 232"/>
+      </defs>
+
+      <rect x="20" y="214" width="1148" height="36" rx="18" fill="var(--card-2)" stroke="var(--line)"/>
+      <rect x="20" y="214" width="1148" height="36" rx="18" fill="none" stroke="var(--accent)" stroke-opacity=".18"/>
+      <path class="f-link dash" d="M26 232 L 1154 232" style="stroke-width:1.6; opacity:.55"/>
+
+      <g class="f-particle" style="fill:#22d3ee">
+        <rect x="-8" y="-8" width="16" height="16" rx="3"><animateMotion dur="9s" repeatCount="indefinite"><mpath href="#plConveyor"/></animateMotion></rect>
+        <rect x="-7" y="-7" width="14" height="14" rx="3" opacity=".65"><animateMotion dur="9s" begin="3s" repeatCount="indefinite"><mpath href="#plConveyor"/></animateMotion></rect>
+        <rect x="-8" y="-8" width="16" height="16" rx="3" opacity=".85"><animateMotion dur="9s" begin="6s" repeatCount="indefinite"><mpath href="#plConveyor"/></animateMotion></rect>
+      </g>
+
+      <!-- station connectors -->
+      <g stroke="var(--line-strong)" stroke-width="1.4" fill="none">
+        <line x1="188" y1="105" x2="216" y2="105"/>
+        <line x1="384" y1="105" x2="412" y2="105"/>
+        <line x1="580" y1="105" x2="608" y2="105"/>
+        <line x1="776" y1="105" x2="804" y2="105"/>
+        <line x1="972" y1="105" x2="1000" y2="105"/>
+      </g>
+
+      <!-- 01 inbound -->
+      <g>
+        <rect class="f-node" x="20" y="40" width="168" height="130" rx="16" stroke-dasharray="5 5" opacity=".95"/>
+        <text class="f-label" x="38" y="68">01 · Inbound</text>
+        <text x="38" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Receiving</text>
+        <text class="f-count" x="38" y="124" style="fill:var(--muted)">—</text>
+        <text class="f-sub" x="38" y="146">outside module</text>
+      </g>
+
+      <!-- 02 register -->
+      <g>
+        <rect class="f-node active" x="216" y="40" width="168" height="130" rx="16" stroke-width="1.6"/>
+        <text class="f-label" x="234" y="68">02 · Validate</text>
+        <text x="234" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Registration</text>
+        <text class="f-count" x="234" y="124">{{ ops.pipeline.received }}</text>
+        <text class="f-sub" x="234" y="146">code + category</text>
+      </g>
+
+      <!-- 03 categorise -->
+      <g>
+        <rect class="f-node active" x="412" y="40" width="168" height="130" rx="16" stroke-width="1.6"/>
+        <text class="f-label" x="430" y="68">03 · Group</text>
+        <text x="430" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Categorisation</text>
+        <text class="f-count" x="430" y="124">{{ ops.counts.categories_used }}</text>
+        <text class="f-sub" x="430" y="146">categories in use</text>
+      </g>
+
+      <!-- 04 photo -->
+      <g>
+        <rect class="f-node active" x="608" y="40" width="168" height="130" rx="16" stroke-width="1.6"/>
+        <text class="f-label" x="626" y="68">04 · Enrich</text>
+        <text x="626" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Photo &amp; notes</text>
+        <text class="f-count" x="626" y="124">{{ ops.pipeline.captured }}</text>
+        <text class="f-sub" x="626" y="146">{{ ops.ratios.photo_pct }}% photographed</text>
+      </g>
+
+      <!-- 05 storage -->
+      <g>
+        <rect class="f-node" x="804" y="40" width="168" height="130" rx="16" stroke-dasharray="5 5"/>
+        <text class="f-label" x="822" y="68">05 · Store</text>
+        <text x="822" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Allocation</text>
+        <text class="f-count" x="822" y="124" style="fill:var(--muted)">—</text>
+        <text class="f-sub" x="822" y="146">outside module</text>
+      </g>
+
+      <!-- 06 dispatch -->
+      <g>
+        <rect class="f-node" x="1000" y="40" width="168" height="130" rx="16" stroke-dasharray="5 5"/>
+        <text class="f-label" x="1018" y="68">06 · Outbound</text>
+        <text x="1018" y="92" font-size="13.5" font-weight="700" fill="var(--ink)">Dispatch</text>
+        <text class="f-count" x="1018" y="124" style="fill:var(--muted)">—</text>
+        <text class="f-sub" x="1018" y="146">outside module</text>
+      </g>
+
+      <text x="20" y="284" font-size="10.5" letter-spacing="1.4" fill="var(--muted)">CONVEYOR · REGISTRY FEED</text>
+      <text x="1156" y="284" font-size="10.5" letter-spacing="1.4" fill="var(--muted)" text-anchor="end">MODULE BOUNDARY 02 → 04</text>
+    </svg>
+  </div>
+
+  <p class="diagram-note small muted">
+    Only stages 02–04 are implemented here: validation, catalogue grouping, photo and notes. Receiving,
+    storage allocation and dispatch belong to neighbouring warehouse modules.
+  </p>
+</section>
+
+<!-- ============ AUDIT PATH + ACTION MIX ============ -->
+<section class="grid grid-2" style="margin-top:18px">
+  <div class="card flow-card" data-reveal>
+    <div class="card-head">
+      <h2>Audit write path</h2>
+      <span class="hint">one transaction, two tables</span>
+    </div>
+
+    <div class="flow-wrap" style="padding-top:10px">
+      <svg class="flow-svg" viewBox="0 0 1180 420" role="img"
+           aria-label="Write path: form input is validated, written inside one transaction to goods and audit log, then read by history and analytics">
+        <defs>
+          <path id="auAB" d="M250 70 L 290 70"/>
+          <path id="auBC" d="M500 70 L 540 70"/>
+          <path id="auCD" d="M790 70 L 830 70"/>
+          <path id="auDE" d="M880 116 C 720 150, 520 150, 470 176"/>
+          <path id="auDF" d="M960 116 C 960 148, 900 176, 860 176"/>
+          <path id="auEG" d="M375 268 C 375 300, 500 306, 560 350"/>
+          <path id="auFG" d="M685 268 L 685 310"/>
+        </defs>
+
+        <path class="f-link dash" d="M250 70 L 290 70"/>
+        <path class="f-link dash" d="M500 70 L 540 70"/>
+        <path class="f-link dash" d="M790 70 L 830 70"/>
+        <path class="f-link dash" d="M880 116 C 720 150, 520 150, 470 176"/>
+        <path class="f-link dash" d="M960 116 C 960 148, 900 176, 860 176"/>
+        <path class="f-link dash" d="M375 268 C 375 300, 500 306, 560 350" style="stroke: color-mix(in srgb, var(--accent-2) 55%, transparent)"/>
+        <path class="f-link dash" d="M685 268 L 685 310" style="stroke: color-mix(in srgb, var(--accent-2) 55%, transparent)"/>
+
+        <g fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+          <path d="M284 64 L 290 70 L 284 76"/>
+          <path d="M534 64 L 540 70 L 534 76"/>
+          <path d="M824 64 L 830 70 L 824 76"/>
+          <path d="M474 172 L 470 176 L 480 175"/>
+          <path d="M855 176 L 860 176 L 857 168"/>
+          <path d="M676 302 L 685 310 L 694 302"/>
+        </g>
+
+        <text class="f-label" x="846" y="112">write</text>
+        <text class="f-label" x="846" y="152">snapshot</text>
+        <text class="f-label" x="700" y="300">read</text>
+
+        <g class="f-particle" style="fill:#818cf8">
+          <circle r="3.4"><animateMotion dur="2.2s" repeatCount="indefinite"><mpath href="#auAB"/></animateMotion></circle>
+          <circle r="3.4"><animateMotion dur="2.2s" begin=".7s" repeatCount="indefinite"><mpath href="#auBC"/></animateMotion></circle>
+        </g>
+        <g class="f-particle" style="fill:#c4b5fd">
+          <circle r="3.6"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#auDF"/></animateMotion></circle>
+          <circle r="3.6" opacity=".7"><animateMotion dur="3.4s" begin="1s" repeatCount="indefinite"><mpath href="#auDE"/></animateMotion></circle>
+        </g>
+        <g class="f-particle" style="fill:#22d3ee">
+          <circle r="3"><animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#auFG"/></animateMotion></circle>
+          <circle r="3"><animateMotion dur="3s" begin="1.2s" repeatCount="indefinite"><mpath href="#auEG"/></animateMotion></circle>
+        </g>
+
+        <!-- row 1 -->
+        <g>
+          <rect class="f-node" x="40" y="24" width="210" height="92" rx="14"/>
+          <text class="f-label" x="58" y="48">Input</text>
+          <text x="58" y="70" font-size="13" font-weight="700" fill="var(--ink)">Form / CSV upload</text>
+          <text class="f-sub" x="58" y="88">POST · multipart</text>
+        </g>
+        <g>
+          <rect class="f-node" x="290" y="24" width="210" height="92" rx="14"/>
+          <text class="f-label" x="308" y="48">Validate</text>
+          <text x="308" y="70" font-size="13" font-weight="700" fill="var(--ink)">Rules &amp; uniqueness</text>
+          <text class="f-sub" x="308" y="88">code · unit · weight</text>
+        </g>
+        <g>
+          <rect class="f-node" x="540" y="24" width="250" height="92" rx="14"/>
+          <text class="f-label" x="558" y="48">Atomically</text>
+          <text x="558" y="70" font-size="13" font-weight="700" fill="var(--ink)">BEGIN IMMEDIATE</text>
+          <text class="f-sub" x="558" y="88">check + write, one lock</text>
+        </g>
+        <g>
+          <rect class="f-node" x="830" y="24" width="290" height="92" rx="14" style="stroke: color-mix(in srgb, var(--good) 40%, var(--line))"/>
+          <text class="f-label" x="848" y="48">Commit</text>
+          <text x="848" y="70" font-size="13" font-weight="700" fill="var(--ink)">All-or-nothing save</text>
+          <text class="f-sub" x="848" y="88">WAL · rollback on error</text>
+        </g>
+
+        <!-- row 2 -->
+        <g>
+          <rect class="f-node" x="250" y="176" width="250" height="92" rx="14"/>
+          <rect x="250" y="176" width="250" height="3" rx="1.5" fill="url(#plA)"/>
+          <text class="f-label" x="268" y="200">Table</text>
+          <text x="268" y="222" font-size="13" font-weight="700" fill="var(--ink)">goods</text>
+          <text class="f-sub" x="268" y="240">{{ ops.counts.goods_total }} rows · live catalogue</text>
+        </g>
+        <g>
+          <rect class="f-node" x="560" y="176" width="250" height="92" rx="14"/>
+          <rect x="560" y="176" width="250" height="3" rx="1.5" fill="url(#plA)"/>
+          <text class="f-label" x="578" y="200">Table</text>
+          <text x="578" y="222" font-size="13" font-weight="700" fill="var(--ink)">audit_log</text>
+          <text class="f-sub" x="578" y="240">{{ ops.counts.events_total }} events · before/after</text>
+        </g>
+
+        <!-- row 3 -->
+        <g>
+          <rect class="f-node" x="560" y="310" width="250" height="86" rx="14" style="stroke: color-mix(in srgb, var(--accent-2) 40%, var(--line))"/>
+          <text class="f-label" x="578" y="334">Read models</text>
+          <text x="578" y="356" font-size="13" font-weight="700" fill="var(--ink)">History · charts · export</text>
+        </g>
+      </svg>
+    </div>
+
+    <p class="diagram-note small muted">
+      The goods row and its history entry are written together: if either write fails, both roll back and no partial
+      state reaches the reader.
+    </p>
+  </div>
+
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Where the events come from</h2>
+      <span class="hint">all time</span>
+    </div>
+    <div id="actionDonut" class="chart" style="margin-top:8px"></div>
+    <hr class="hairline">
+    <div class="stat-inline"><span class="k">Registrations</span><span class="v">{{ ops.actions.created }}</span></div>
+    <div class="stat-inline"><span class="k">Edits</span><span class="v">{{ ops.actions.updated }}</span></div>
+    <div class="stat-inline"><span class="k">Archives</span><span class="v">{{ ops.actions.archived }}</span></div>
+    <div class="stat-inline"><span class="k">Restores</span><span class="v">{{ ops.actions.restored }}</span></div>
+    <div class="stat-inline"><span class="k">Purges</span><span class="v">{{ ops.actions.deleted }}</span></div>
+    <div class="stat-inline"><span class="k">Photo replacements</span><span class="v">{{ ops.actions.photo_updated }}</span></div>
+    <p class="small muted" style="margin:12px 0 0">
+      Every mutation writes one snapshot pair, so the history page can show a before/after row for each event.
+    </p>
+  </div>
+</section>
+
+<!-- ============ HEAT + STREAM ============ -->
+<section class="grid grid-2" style="margin-top:18px">
+  <div class="card pad" data-reveal>
+    <div class="row-between">
+      <div>
+        <h2 class="card-title">Operations heat · {{ ops.window.days }} days</h2>
+        <p class="card-sub" style="margin:0">{{ ops.window.events }} events · busiest day {{ ops.window.busiest }}</p>
+      </div>
+      <div class="heat-scale">
+        <span class="small muted">quiet</span>
+        <i style="background:color-mix(in srgb,var(--muted) 12%,transparent)"></i>
+        <i style="background:color-mix(in srgb,var(--accent) 26%,transparent)"></i>
+        <i style="background:color-mix(in srgb,var(--accent) 45%,transparent)"></i>
+        <i style="background:linear-gradient(160deg,#6366f1,#4f46e5)"></i>
+        <i style="background:linear-gradient(160deg,#22d3ee,#4f46e5)"></i>
+        <span class="small muted">busy</span>
+      </div>
+    </div>
+
+    <div class="heat" style="margin-top:14px">
+      {% for row in ops.daily %}
+      {% set n = row.total %}
+      <div class="heat-cell {% if n == 0 %}l0{% elif n <= 2 %}l1{% elif n <= 5 %}l2{% elif n <= 9 %}l3{% else %}l4{% endif %}"
+           style="--i:{{ loop.index0 }}"
+           title="{{ row.day }} · {{ n }} events · {{ row.created }} new, {{ row.archived }} archived, {{ row.restored }} restored">
+        {{ n if n else '' }}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="heat-foot">
+      <span>{{ ops.daily[0].day }} → {{ ops.daily[-1].day }} · UTC</span>
+      <span>{{ ops.window.events }} events</span>
+    </div>
+  </div>
+
+  <div class="card pad" data-reveal>
+    <div class="card-head" style="padding:0">
+      <h2>Event stream</h2>
+      <span class="hint">newest first · {{ ops.latest_event }}</span>
+    </div>
+    {% if ops.recent %}
+    <ul class="stream" style="margin-top:10px; max-height:330px">
+      {% for event in ops.recent %}
+      <li>
+        <div class="s-body">
+          <div class="s-line">
+            <strong><a href="{{ url_for('goods_history_page', goods_id=event.entity_id) }}">{{ event.entity_label }}</a></strong>
+            <span class="s-act {{ event.action }}">{{ event.word }}</span>
+          </div>
+        </div>
+        <time>{{ event.created_at[5:16] }}</time>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted small">No events recorded yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<p class="note" style="margin-top:18px">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+  <span>These diagrams are generated from the live database on every page load. Numbers update automatically; the
+    animation is decorative and carries no data of its own.</span>
+</p>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" data-chart="donut" data-target="#actionDonut">
+{"segments": [
+   {"label": "Created", "value": {{ ops.actions.created }}, "color": "#10b981"},
+   {"label": "Updated", "value": {{ ops.actions.updated }}, "color": "#6366f1"},
+   {"label": "Archived", "value": {{ ops.actions.archived }}, "color": "#f59e0b"},
+   {"label": "Restored", "value": {{ ops.actions.restored }}, "color": "#22d3ee"},
+   {"label": "Purged", "value": {{ ops.actions.deleted }}, "color": "#ef4444"},
+   {"label": "Photo", "value": {{ ops.actions.photo_updated }}, "color": "#a855f7"}
+ ],
+ "centerLabel": "events", "aria": "Audit events by action"}
+</script>
+{% endblock %}
+

@@ -1,165 +1,107 @@
 {% extends "_layout.html" %}
+{% from "_macros.html" import cat_image %}
 {% block title %}Categories{% endblock %}
 {% block heading %}Categories{% endblock %}
-
-{% block head %}
-<style>
-    .heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 20px;
-    }
-
-    .count {
-        background: var(--accent-soft);
-        color: var(--accent);
-        padding: 10px 16px;
-        border-radius: 10px;
-        font-weight: 600;
-    }
-
-    .card {
-        margin-bottom: 20px;
-    }
-
-    .form-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .form-row input {
-        flex: 1 1 220px;
-    }
-
-    .form-row .btn {
-        margin-top: 0;
-    }
-
-    .rename-form {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-    }
-
-    .rename-form input {
-        flex: 1 1 160px;
-    }
-
-    .rename-form button,
-    .delete-button {
-        padding: .4rem .8rem;
-        border-radius: 7px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
-        font-size: .82rem;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .rename-form button:hover {
-        background: var(--accent-soft);
-        border-color: var(--accent);
-    }
-
-    .delete-button {
-        border-color: #fecaca;
-        color: #b91c1c;
-        background: #fef2f2;
-    }
-
-    .delete-button:hover {
-        background: #fee2e2;
-    }
-
-    :root[data-theme="dark"] .delete-button {
-        background: #3f1a1a;
-        color: #fca5a5;
-        border-color: #7f1d1d;
-    }
-</style>
-{% endblock %}
+{% block crumb %}Catalogue · groups{% endblock %}
 
 {% block content %}
-<div class="heading">
-    <p class="sub" style="margin:0">Organize your goods into clear groups.</p>
-    <span class="count">{{ categories | length }} categories</span>
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Catalogue structure</span>
+    <h2 class="page-title">Categories</h2>
+    <p class="lede">Groups organise the registry. A category can only be deleted when no goods — including archived
+      records — still reference it.</p>
+  </div>
+  <div class="page-actions">
+    <span class="count-pill"><b>{{ categories | length }}</b> groups</span>
+  </div>
 </div>
 
-<section class="card">
+<section class="card pad" data-reveal style="margin-bottom:18px">
+  <div class="card-head" style="padding:0">
     <h2>Add a category</h2>
-    <form method="POST" action="{{ url_for('categories_page') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label for="category-name">Category name</label>
-        <div class="form-row">
-            <input id="category-name" type="text" name="name" value="{{ category_name }}" placeholder="e.g. Household"
-                maxlength="60" required>
-            <button class="btn" type="submit">+ Add category</button>
-        </div>
-        <p class="help">Use a unique name with a maximum of 60 characters.</p>
-    </form>
-</section>
-
-<section class="card">
-    {% if categories %}
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Rename</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for category in categories %}
-                <tr>
-                    <td>{{ category["id"] }}</td>
-                    <td><strong>{{ category["name"] }}</strong></td>
-                    <td>
-                        <form class="rename-form" method="POST"
-                            action="{{ url_for('rename_category_page', category_id=category['id']) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <label class="visually-hidden" for="rename-{{ category['id'] }}">New name</label>
-                            <input id="rename-{{ category['id'] }}" type="text" name="name"
-                                value="{{ category['name'] }}" maxlength="60" required>
-                            <button type="submit">Rename</button>
-                        </form>
-                    </td>
-                    <td>
-                        <form class="delete-category-form" method="POST"
-                            action="{{ url_for('delete_category_page', category_id=category['id']) }}"
-                            data-category-name="{{ category['name'] }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <button type="submit" class="delete-button">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <span class="hint">max 60 characters</span>
+  </div>
+  <form method="POST" action="{{ url_for('categories_page') }}" style="margin-top:14px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="filter-bar">
+      <input id="category-name" type="text" name="name" value="{{ category_name }}"
+             placeholder="e.g. Household, Cold storage, Fragile…" maxlength="60" required
+             aria-label="Category name" style="flex:1 1 280px; max-width:none">
+      <button class="btn" type="submit">Add category</button>
     </div>
-    {% else %}
-    <div class="empty">No categories yet.</div>
-    {% endif %}
+    <p class="help">Names are unique and case-insensitive. Extra spaces are collapsed automatically.</p>
+  </form>
 </section>
-{% endblock %}
 
-{% block scripts %}
-<script>
-    document.querySelectorAll(".delete-category-form").forEach(function (form) {
-        form.addEventListener("submit", function (event) {
-            if (!window.confirm('Permanently delete category "' + form.dataset.categoryName + '"?\n\nCategories used by goods cannot be deleted.')) {
-                event.preventDefault();
-            }
-        });
-    });
-</script>
+{% if categories %}
+{% set peak = categories | map(attribute='goods_count') | max %}
+<section class="grid grid-3" style="margin-bottom:18px">
+  {% for category in categories %}
+  <article class="cat-card" data-reveal>
+    <div class="cat-media">
+      <img src="{{ cat_image(category.name) }}" alt="{{ category.name }} goods illustration" loading="lazy">
+      <span class="cat-count">{{ category.goods_count }}<span>items</span></span>
+    </div>
+
+    <div class="cat-body">
+      <div class="row-between" style="gap:8px">
+        <span class="cat-title">{{ category.name }}</span>
+        <span class="small muted">#{{ category.id }}</span>
+      </div>
+
+      <div class="cat-meter">
+        <i style="width:{{ (category.goods_count * 100 / peak) | round(0) if peak else 0 }}%"></i>
+      </div>
+
+      <div class="row-between" style="gap:8px">
+        <span class="small muted">
+          {% if category.goods_count %}
+          {{ category.goods_count }} record{{ '' if category.goods_count == 1 else 's' }}
+          {% else %}unused — safe to delete{% endif %}
+        </span>
+        <a class="chip-btn" href="{{ url_for('goods_page', q=category.name) }}">View</a>
+      </div>
+
+      <hr class="hairline" style="margin:4px 0">
+
+      <div class="cat-actions">
+        <form class="rename-form" method="POST" action="{{ url_for('rename_category_page', category_id=category.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="text" name="name" value="{{ category.name }}" maxlength="60" required
+                 aria-label="New name for {{ category.name }}">
+          <button class="chip-btn" type="submit">Rename</button>
+        </form>
+
+        <form method="POST" action="{{ url_for('delete_category_page', category_id=category.id) }}"
+              data-confirm="Delete “{{ category.name }}”? This cannot be undone. Categories used by any goods record will be refused."
+              data-confirm-title="Delete category"
+              data-confirm-ok="Delete category"
+              data-confirm-danger="1"
+              style="margin:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="chip-btn bad" type="submit">Delete</button>
+        </form>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="card">
+  <div class="empty-xl">
+    <img src="{{ url_for('static', filename='img/cat-packaging.jpg') }}" alt="">
+    <h2>No categories yet</h2>
+    <p>Add the first group above — goods can only be registered into an existing category.</p>
+  </div>
+</section>
+{% endif %}
+
+<p class="note">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+  <span>Renames and deletions are recorded in the audit log. Deleting a category never touches goods records; the
+    foreign key rule blocks it first.</span>
+</p>
+
 {% endblock %}
